@@ -144,6 +144,15 @@ constructor(
         apps.forEach { addIconToDBAndMemCache(it, LauncherActivityCachingLogic, userSerial) }
     }
 
+    override fun clear() {
+        super.clear()
+        if (Looper.myLooper() == workerHandler.looper) {
+            widgetCategoryBitmapInfos.clear()
+        } else {
+            workerHandler.post { widgetCategoryBitmapInfos.clear() }
+        }
+    }
+
     /** Closes the cache DB. This will clear any in-memory cache. */
     fun close() {
         // Close the actual DB on the same thread where the cache is used.

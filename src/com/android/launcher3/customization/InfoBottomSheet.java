@@ -26,6 +26,9 @@ import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.model.data.ItemInfo;
+import com.android.launcher3.settings.preference.IconPackPrefSetter;
+import com.android.launcher3.settings.preference.ReloadingListPreference;
+import com.android.launcher3.util.AppReloader;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.PackageManagerHelper;
 
@@ -83,6 +86,20 @@ public class InfoBottomSheet extends CustomizationBottomSheet {
         manager.setOnDisplayPreferenceDialogListener(preference -> {
             if (preference instanceof ListPreference list) showListDialog(list);
         });
+        ReloadingListPreference icons = mPreferences.findPreference("pref_app_info_icon_pack");
+        icons.setValue(IconDatabase.hasOverrideForComponent(getContext(), key)
+                ? IconDatabase.getByComponent(getContext(), key) : IconDatabase.VALUE_INHERIT);
+        icons.setOnReloadListener(ctx -> new IconPackPrefSetter(ctx, key.componentName));
+        icons.setOnPreferenceChangeListener((preference, value) -> {
+            if (IconDatabase.VALUE_INHERIT.equals(value)) {
+                IconDatabase.resetForComponent(getContext(), key);
+            } else {
+                IconDatabase.setForComponent(getContext(), key, (String) value);
+            }
+            AppReloader.get(getContext()).reload(key);
+            return true;
+        });
+
         Preference more = mPreferences.findPreference("pref_app_info_more");
         more.setOnPreferenceClickListener(preference -> {
             PackageManagerHelper.startDetailsActivityForInfo(
