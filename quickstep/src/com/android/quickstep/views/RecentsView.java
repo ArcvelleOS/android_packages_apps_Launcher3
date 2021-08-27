@@ -5838,6 +5838,13 @@ public abstract class RecentsView<
         return 1f;
     }
 
+    /** Package locks apply to every card for that app, including both chips in split pairs. */
+    public void updateTaskLockStates() {
+        for (TaskView taskView : getTaskViews()) {
+            taskView.updateLockState();
+        }
+    }
+
     /**
      * Prepares this RecentsView to scroll properly for an upcoming child view focus request from
      * keyboard quick switching
