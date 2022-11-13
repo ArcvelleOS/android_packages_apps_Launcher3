@@ -572,7 +572,8 @@ public class InvariantDeviceProfile {
     private Object[] toModelState() {
         return new Object[]{
                 numColumns, numRows, numSearchContainerColumns, numDatabaseHotseatIcons,
-                iconBitmapSize, fillResIconDpi, numDatabaseAllAppsColumns, dbFile, mLocale};
+                iconBitmapSize, fillResIconDpi, numDatabaseAllAppsColumns,
+                dbFile, mLocale};
     }
 
     /** Updates IDP using the provided context. Notifies listeners of change. */

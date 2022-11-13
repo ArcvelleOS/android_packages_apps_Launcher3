@@ -62,6 +62,8 @@ import com.android.launcher3.InvariantDeviceProfile;
 import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.LauncherPrefs;
+import com.android.launcher3.customization.IconDatabase;
+import com.android.launcher3.icons.pack.IconPackSettingsActivity;
 import com.android.launcher3.lineage.trust.TrustAppsActivity;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
@@ -266,6 +268,11 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                 });
             }
 
+            Preference iconPackPreference = screen.findPreference(IconDatabase.KEY_ICON_PACK);
+            if (iconPackPreference != null) {
+                setupIconPackPreference(iconPackPreference);
+            }
+
             for (int i = screen.getPreferenceCount() - 1; i >= 0; i--) {
                 Preference preference = screen.getPreference(i);
                 if (!initPreference(preference)) {
@@ -393,13 +400,29 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                 case SHOW_HOTSEAT_QSB_KEY:
                     return Flags.enableQsbOnHotseat() && launcherApps != null &&
                             launcherApps.isPackageEnabled(Utilities.GSA_PACKAGE, myUserHandle());
+                case IconDatabase.KEY_ICON_PACK:
+                    setupIconPackPreference(preference);
+                    return true;
             }
             return true;
+        }
+
+        private void setupIconPackPreference(Preference preference) {
+            preference.setSummary(IconDatabase.getGlobalLabel(getContext()));
+            preference.setOnPreferenceClickListener(p -> {
+                startActivity(new Intent(getContext(), IconPackSettingsActivity.class));
+                return true;
+            });
         }
 
         @Override
         public void onResume() {
             super.onResume();
+
+            Preference iconPackPref = findPreference(IconDatabase.KEY_ICON_PACK);
+            if (iconPackPref != null) {
+                iconPackPref.setSummary(IconDatabase.getGlobalLabel(getContext()));
+            }
 
             if (isAdded() && !mPreferenceHighlighted) {
                 PreferenceHighlighter highlighter = createHighlighter();
