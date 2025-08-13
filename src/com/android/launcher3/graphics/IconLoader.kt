@@ -34,6 +34,7 @@ import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.CacheableShortcutInfo.Companion.getIcon
 import com.android.launcher3.icons.IconCache
 import com.android.launcher3.icons.LauncherIconProvider
+import com.android.launcher3.icons.LauncherIconProvider.CONFIG_HINT_NO_WRAP
 import com.android.launcher3.icons.LauncherIcons
 import com.android.launcher3.icons.cache.CacheLookupFlag
 import com.android.launcher3.icons.cache.CachedObjectCachingLogic.loadFullResIcon
@@ -124,6 +125,13 @@ constructor(
         if (mainIcon == null) {
             return null
         }
+        val noWrapHintSet = (mainIcon.changingConfigurations and CONFIG_HINT_NO_WRAP) != 0
+        if (noWrapHintSet) {
+            // Use the cached pack artwork through the transition rather than a masked/themed
+            // adaptive recreation, including when the pack itself supplies an adaptive icon.
+            return null
+        }
+
         var result: AdaptiveIconDrawable =
             if (mainIcon is AdaptiveIconDrawable) {
                 mainIcon
@@ -133,7 +141,7 @@ constructor(
             }
 
         // Inject theme icon drawable
-        if (Utilities.ATLEAST_T && useTheme) {
+        if (Utilities.ATLEAST_T && useTheme && !noWrapHintSet) {
             val themeController = themeManager.themeController
             if (themeController != null) {
                 result =
