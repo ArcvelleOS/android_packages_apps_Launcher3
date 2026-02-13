@@ -58,16 +58,7 @@ constructor(
 
     private var onSettingsChangeSafeCloseable: SafeCloseable? = null
 
-    init {
-        onSettingsChangeSafeCloseable =
-            SettingsCache.INSTANCE[context].getListenableRef(USER_SETUP_COMPLETE_URI).forEach(
-                bgExecutor
-            ) { v ->
-                // Setting will call updateSystemAction() which is synchronized, thus this callback
-                // is safe to be called on bgExecutor
-                isUserSetupComplete = v
-            }
-    }
+    private var isDestroyed = false
 
     /** `true` if home and overview are the same Activity. */
     @Volatile
@@ -107,20 +98,33 @@ constructor(
 
     @Volatile private var isUserUnlocked = false
 
+    init {
+        onSettingsChangeSafeCloseable =
+            SettingsCache.INSTANCE[context].getListenableRef(USER_SETUP_COMPLETE_URI).forEach(
+                bgExecutor
+            ) { v ->
+                // Registration is serialized inside updateSystemAction on bgExecutor.
+                isUserSetupComplete = v
+            }
+    }
+
     fun onUserUnlocked() {
         isUserUnlocked = true
         updateSystemAction()
     }
 
     private fun updateSystemAction() {
-        synchronized(this) {
-            val isInSetupFlow = isSetupUiVisible || !isUserSetupComplete
-            val shouldRegisterAction =
-                (isHomeAndOverviewSame || isTaskbarPresent) && !isInSetupFlow && isUserUnlocked
-            if (isActionRegistered == shouldRegisterAction) return
-            isActionRegistered = shouldRegisterAction
+        bgExecutor.execute {
+            synchronized(this@AllAppsActionManager) {
+                if (isDestroyed) return@execute
 
-            bgExecutor.execute {
+                // Evaluate when the job runs. A newer user/setup/taskbar change may have
+                // superseded the one that queued this update, even on a pooled executor.
+                val isInSetupFlow = isSetupUiVisible || !isUserSetupComplete
+                val shouldRegisterAction =
+                    (isHomeAndOverviewSame || isTaskbarPresent) && !isInSetupFlow && isUserUnlocked
+                if (isActionRegistered == shouldRegisterAction) return@execute
+
                 val accessibilityManager =
                     context.getSystemService(AccessibilityManager::class.java) ?: return@execute
                 if (shouldRegisterAction) {
@@ -138,17 +142,17 @@ constructor(
                         allAppsPendingIntent
                     )
                 } else {
-                    accessibilityManager.unregisterSystemAction(
-                        GLOBAL_ACTION_ACCESSIBILITY_ALL_APPS
-                    )
+                    accessibilityManager.unregisterSystemAction(GLOBAL_ACTION_ACCESSIBILITY_ALL_APPS)
                     quickstepKeyGestureEventsManager.unregisterAllAppsKeyGestureEvent()
                 }
+                isActionRegistered = shouldRegisterAction
             }
         }
     }
 
     fun onDestroy() {
         synchronized(this) {
+            isDestroyed = true
             isActionRegistered = false
             context
                 .getSystemService(AccessibilityManager::class.java)
@@ -168,4 +172,5 @@ constructor(
         pw.println("\tisActionRegistered=$isActionRegistered")
         pw.println("\tisUserUnlocked=$isUserUnlocked")
     }
+
 }

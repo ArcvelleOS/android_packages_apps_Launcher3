@@ -31,6 +31,8 @@ import com.android.launcher3.util.TestUtil
 import com.android.tools.dagger.mutation.annotations.BindValue
 import com.android.tools.dagger.mutation.annotations.MutatedComponent
 import com.google.common.truth.Truth.assertThat
+import java.util.ArrayDeque
+import java.util.concurrent.Executor
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit.SECONDS
 import org.junit.After
@@ -40,6 +42,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.reset
+import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
@@ -129,14 +132,12 @@ class AllAppsActionManagerTest {
     }
 
     @Test
-    fun toggleTaskbar_destroyedBeforeActionRegistered_pendingActionUnregistered() {
+    fun toggleTaskbar_pendingActionUsesLatestState() {
         allAppsActionManager.isTaskbarPresent = true
         allAppsActionManager.isTaskbarPresent = false
 
         TestUtil.runOnExecutorSync(bgExecutor) {} // Force system action to unregister.
-        assertThat(callbackSemaphore.tryAcquire(TIMEOUT, SECONDS)).isTrue()
         assertThat(allAppsActionManager.isActionRegistered).isFalse()
-        verify(quickstepKeyGestureEventsManager).unregisterAllAppsKeyGestureEvent()
     }
 
     @Test
@@ -146,8 +147,36 @@ class AllAppsActionManagerTest {
 
         allAppsActionManager.isHomeAndOverviewSame = false
         allAppsActionManager.isHomeAndOverviewSame = true
-        assertThat(callbackSemaphore.tryAcquire(TIMEOUT, SECONDS)).isTrue()
+        TestUtil.runOnExecutorSync(bgExecutor) {}
         assertThat(allAppsActionManager.isActionRegistered).isTrue()
+        verify(quickstepKeyGestureEventsManager, atLeastOnce())
+            .registerAllAppsKeyGestureEvent(any())
+    }
+
+    @Test
+    fun queuedUpdates_doNotRegisterAnObsoleteAction() {
+        val pending = ArrayDeque<Runnable>()
+        var providerCalls = 0
+        val manager = AllAppsActionManager(context, Executor { pending.add(it) },
+            quickstepKeyGestureEventsManager) {
+            providerCalls++
+            allAppsIntentSenderProvider
+        }
+        try {
+            manager.onUserUnlocked()
+            manager.isTaskbarPresent = true
+            manager.isTaskbarPresent = false
+            while (pending.isNotEmpty()) pending.removeFirst().run()
+            assertThat(providerCalls).isEqualTo(0)
+            assertThat(manager.isActionRegistered).isFalse()
+
+            manager.isTaskbarPresent = true
+            while (pending.isNotEmpty()) pending.removeFirst().run()
+            assertThat(providerCalls).isEqualTo(1)
+            assertThat(manager.isActionRegistered).isTrue()
+        } finally {
+            manager.onDestroy()
+        }
     }
 
     @Test
