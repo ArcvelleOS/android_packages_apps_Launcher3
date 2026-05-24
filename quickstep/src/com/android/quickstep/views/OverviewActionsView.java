@@ -30,7 +30,9 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
@@ -130,7 +132,8 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
     private static final int INDEX_SCROLL_ALPHA = 5;
     private static final int INDEX_GROUPED_ALPHA = 6;
     private static final int INDEX_3P_LAUNCHER = 7;
-    private static final int NUM_ALPHAS = 8;
+    private static final int INDEX_LOCK_PILL_ALPHA = 8;
+    private static final int NUM_ALPHAS = 9;
 
     public @interface SplitButtonHiddenFlags { }
     public static final int FLAG_SMALL_SCREEN_HIDE_SPLIT = 1 << 0;
@@ -183,6 +186,15 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
     private boolean mClearAll;
     private boolean mLens;
 
+    private View mLockPillContainer;
+    private TextView mLockPillText;
+    private ImageView mLockPillIcon;
+    private boolean mLockPillShowing = false;
+    private boolean mLockPillAtThreshold = false;
+    private boolean mLockPillInitialLocked = false;
+
+    private static final long LOCK_PILL_FADE_DURATION = 180L;
+
     public OverviewActionsView(Context context) {
         this(context, null);
     }
@@ -209,6 +221,9 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
         mActionButtons = findViewById(R.id.action_buttons);
         mSaveAppPairButton = findViewById(R.id.action_save_app_pair);
         TypefaceUtils.setTypeface(mSaveAppPairButton, FontFamily.GSF_LABEL_LARGE);
+        mLockPillContainer = findViewById(R.id.lock_pill_container);
+        mLockPillText = findViewById(R.id.lock_pill_text);
+        mLockPillIcon = findViewById(R.id.lock_pill_icon);
         // Initialize a list to hold alphas for mActionButtons and any group action buttons.
         mMultiValueAlphas[ACTIONS_ALPHAS] = new MultiValueAlpha(mActionButtons, NUM_ALPHAS);
         mMultiValueAlphas[GROUP_ACTIONS_ALPHAS] =
@@ -502,5 +517,95 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
                 : R.drawable.ic_save_app_pair_up_down;
         mSaveAppPairButton.setCompoundDrawablesRelativeWithIntrinsicBounds(
                 appPairIconRes, 0, 0, 0);
+    }
+
+    public void showLockPill(boolean isCurrentlyLocked) {
+        if (mLockPillContainer == null || mLockPillShowing) return;
+        mLockPillShowing = true;
+        mLockPillAtThreshold = false;
+        mLockPillInitialLocked = isCurrentlyLocked;
+        if (mLockPillIcon != null) {
+            mLockPillIcon.setImageResource(isCurrentlyLocked
+                    ? R.drawable.ic_protected_unlocked
+                    : R.drawable.ic_protected_locked);
+        }
+        applyLockPillState();
+        mLockPillContainer.animate().cancel();
+        mLockPillContainer.setAlpha(0f);
+        mLockPillContainer.setScaleX(0.85f);
+        mLockPillContainer.setScaleY(0.85f);
+        mLockPillContainer.setVisibility(VISIBLE);
+        mLockPillContainer.animate()
+                .alpha(1f).scaleX(1f).scaleY(1f)
+                .setDuration(LOCK_PILL_FADE_DURATION).start();
+        animateLockPillActionsAlpha(0f);
+    }
+
+    public void setLockPillAtThreshold(boolean atThreshold) {
+        if (mLockPillContainer == null || !mLockPillShowing) return;
+        if (mLockPillAtThreshold == atThreshold) return;
+        mLockPillAtThreshold = atThreshold;
+        applyLockPillState();
+    }
+
+    private void applyLockPillState() {
+        if (mLockPillText == null) return;
+        int textRes;
+        if (mLockPillAtThreshold) {
+            textRes = mLockPillInitialLocked
+                    ? R.string.unlock_app_release_to_confirm
+                    : R.string.lock_app_release_to_confirm;
+        } else {
+            textRes = mLockPillInitialLocked
+                    ? R.string.unlock_app_prompt
+                    : R.string.lock_app_prompt;
+        }
+        mLockPillText.setText(textRes);
+    }
+
+    public void hideLockPill() {
+        if (mLockPillContainer == null || !mLockPillShowing) return;
+        mLockPillShowing = false;
+        mLockPillContainer.animate().cancel();
+        mLockPillContainer.animate()
+                .alpha(0f)
+                .setDuration(LOCK_PILL_FADE_DURATION)
+                .withEndAction(() -> {
+                    if (mLockPillContainer != null) {
+                        mLockPillContainer.setVisibility(GONE);
+                    }
+                }).start();
+        animateLockPillActionsAlpha(1f);
+    }
+
+    private void animateLockPillActionsAlpha(float alpha) {
+        AnimatedFloat lockAlpha = mAlphaProperties[INDEX_LOCK_PILL_ALPHA];
+        lockAlpha.cancelAnimation();
+        lockAlpha.animateToValue(alpha).setDuration(LOCK_PILL_FADE_DURATION).start();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mLockPillContainer != null) {
+            mLockPillContainer.animate().cancel();
+            mLockPillContainer.setVisibility(GONE);
+        }
+        mLockPillShowing = false;
+        AnimatedFloat lockAlpha = mAlphaProperties[INDEX_LOCK_PILL_ALPHA];
+        if (lockAlpha != null) {
+            lockAlpha.cancelAnimation();
+            lockAlpha.updateValue(1f);
+        }
+        for (int i = 0; i < mActionButtons.getChildCount(); i++) {
+            resetButtonAnimation(mActionButtons.getChildAt(i));
+        }
+        resetButtonAnimation(mSaveAppPairButton);
+        super.onDetachedFromWindow();
+    }
+
+    private static void resetButtonAnimation(View view) {
+        view.animate().cancel();
+        view.setScaleX(1f);
+        view.setScaleY(1f);
     }
 }
