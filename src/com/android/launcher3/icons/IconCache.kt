@@ -39,6 +39,7 @@ import com.android.launcher3.LauncherSettings.Favorites
 import com.android.launcher3.LauncherSettings.Favorites.ITEM_TYPE_DEEP_SHORTCUT
 import com.android.launcher3.Utilities
 import com.android.launcher3.Utilities.ATLEAST_V
+import com.android.launcher3.util.CustomAppNameStore
 import com.android.launcher3.dagger.ApplicationContext
 import com.android.launcher3.dagger.LauncherAppSingleton
 import com.android.launcher3.homescreenfiles.HomeScreenFilesCachingLogic
@@ -582,7 +583,8 @@ constructor(
         bitmap?.withFlags(getUserFlagOpLocked(user)) ?: getDefaultIcon(user)
 
     private fun applyCacheEntry(entry: CacheEntry, info: ItemInfoWithIcon) {
-        info.title = Utilities.trim(entry.title)
+        val customName = CustomAppNameStore.getCustomName(context, info)
+        info.title = customName ?: Utilities.trim(entry.title)
         info.contentDescription =
             if (info.isFileSystemFolderItem())
                 context.getString(

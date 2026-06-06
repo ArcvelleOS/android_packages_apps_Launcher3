@@ -3,6 +3,7 @@ package com.android.launcher3.popup;
 import static com.android.launcher3.AbstractFloatingView.TYPE_FOLDER;
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_ALL_APPS;
 import static com.android.launcher3.LauncherSettings.Favorites.CONTAINER_ALL_APPS_PREDICTION;
+import static com.android.launcher3.LauncherSettings.Favorites.ITEM_TYPE_APPLICATION;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_DISMISS_PREDICTION_UNDO;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_PRIVATE_SPACE_INSTALL_SYSTEM_SHORTCUT_TAP;
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_PRIVATE_SPACE_UNINSTALL_SYSTEM_SHORTCUT_TAP;
@@ -11,6 +12,7 @@ import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCH
 import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_SYSTEM_SHORTCUT_WIDGETS_TAP;
 import static com.android.launcher3.testing.shared.ResourceUtils.INVALID_RESOURCE_HANDLE;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -18,12 +20,15 @@ import android.content.pm.ShortcutInfo;
 import android.graphics.Rect;
 import android.os.Process;
 import android.os.UserHandle;
+import android.text.InputFilter;
 import android.util.Log;
-import android.view.InflateException;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,11 +38,14 @@ import com.android.launcher3.AbstractFloatingViewHelper;
 import com.android.launcher3.DropTargetHandler;
 import com.android.launcher3.Flags;
 import com.android.launcher3.Launcher;
+import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.LauncherModel;
 import com.android.launcher3.LauncherSettings;
 import com.android.launcher3.R;
 import com.android.launcher3.SecondaryDropTarget;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.model.data.WorkspaceItemInfo;
+import com.android.launcher3.util.CustomAppNameStore;
 import com.android.launcher3.accessibility.LauncherAccessibilityDelegate;
 import com.android.launcher3.allapps.PrivateProfileManager;
 import com.android.launcher3.customization.InfoBottomSheet;
@@ -295,6 +303,114 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
                 this.containsMultipleTasks = containsMultipleTasks;
                 this.taskTitle = taskTitle;
                 this.nodeId = nodeId;
+            }
+        }
+    }
+
+    public static final Factory<Launcher> RENAME_APP =
+            (activity, itemInfo, originalView) -> {
+                if (itemInfo.itemType == ITEM_TYPE_APPLICATION
+                        && itemInfo.getTargetComponent() != null) {
+                    return new RenameApp<>(activity, itemInfo, originalView);
+                }
+                return null;
+            };
+
+    public static class RenameApp<T extends ActivityContext> extends SystemShortcut<T> {
+        private static final int MAX_APP_NAME_LENGTH = 32;
+
+        public RenameApp(T target, ItemInfo itemInfo, @NonNull View originalView) {
+            super(getDrawableId(), R.string.rename_app_label, target,
+                    itemInfo, originalView);
+        }
+
+        public static int getDrawableId() {
+            return R.drawable.ic_edit;
+        }
+
+        @Override
+        public void onClick(View view) {
+            dismissTaskMenuView();
+
+            Context context = view.getContext();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setTitle(R.string.rename_app_title);
+
+            final EditText input = new EditText(context);
+            input.setText(mItemInfo.title);
+            input.setSelection(0, mItemInfo.title != null ? mItemInfo.title.length() : 0);
+            input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MAX_APP_NAME_LENGTH)});
+            input.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+
+            builder.setView(input);
+
+            builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                String newName = input.getText().toString().trim();
+                if (validateAndUpdateName(newName, context)) {
+                    Toast.makeText(context,
+                            R.string.app_renamed_successfully,
+                            Toast.LENGTH_SHORT).show();
+                } else if (newName.isEmpty()) {
+                    Toast.makeText(context,
+                            R.string.rename_app_empty_error,
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(context,
+                            context.getString(R.string.rename_app_length_error,
+                                    MAX_APP_NAME_LENGTH),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
+
+            if (CustomAppNameStore.getCustomName((Context) mTarget, mItemInfo) != null) {
+                builder.setNeutralButton(R.string.rename_app_reset, (dialog2, which2) -> {
+                    resetToOriginalName(context);
+                    Toast.makeText(context,
+                            R.string.rename_app_reset_message,
+                            Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            AlertDialog dialog = builder.create();
+            dialog.show();
+
+            input.requestFocus();
+            InputMethodManager imm = (InputMethodManager)
+                    context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
+            }
+        }
+
+        private boolean validateAndUpdateName(String newName, Context context) {
+            if (newName.isEmpty()) {
+                return false;
+            }
+
+            if (newName.length() > MAX_APP_NAME_LENGTH) {
+                return false;
+            }
+
+            CustomAppNameStore.saveCustomName(context, mItemInfo, newName);
+
+            forceUiUpdate(context);
+
+            return true;
+        }
+
+        private void resetToOriginalName(Context context) {
+            CustomAppNameStore.saveCustomName(context, mItemInfo, null);
+            forceUiUpdate(context);
+        }
+
+        private void forceUiUpdate(Context context) {
+            ComponentName cn = mItemInfo.getTargetComponent();
+            if (cn != null) {
+                LauncherAppState.getInstance(context).getModel()
+                        .onCustomAppNameChanged(cn, mItemInfo.user);
             }
         }
     }
