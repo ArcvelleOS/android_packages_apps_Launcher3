@@ -100,6 +100,18 @@ public class InfoBottomSheet extends CustomizationBottomSheet {
             return true;
         });
 
+        Preference customIcon = mPreferences.findPreference("pref_app_info_custom_icon");
+        customIcon.setOnPreferenceClickListener(preference -> {
+            IconPickerBottomSheet picker = (IconPickerBottomSheet) launcher.getLayoutInflater()
+                    .inflate(R.layout.icon_picker_bottom_sheet, launcher.getDragLayer(), false);
+            picker.show(key, () -> {
+                icons.setValue(IconDatabase.hasOverrideForComponent(getContext(), key)
+                        ? IconDatabase.getByComponent(getContext(), key)
+                        : IconDatabase.VALUE_INHERIT);
+                AppReloader.get(getContext()).reload(key);
+            });
+            return true;
+        });
         Preference more = mPreferences.findPreference("pref_app_info_more");
         more.setOnPreferenceClickListener(preference -> {
             PackageManagerHelper.startDetailsActivityForInfo(

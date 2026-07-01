@@ -727,7 +727,14 @@
     <string name="app_info_custom_icon_title">Custom icon</string>
     <string name="app_info_custom_icon_summary">Pick any icon from any icon pack</string>
     <string name="icon_picker_search_hint">Search icons</string>
+    <string name="icon_picker_choose_pack">Choose an icon pack</string>
+    <string name="icon_picker_back_content_description">Back to icon packs</string>
+    <string name="icon_picker_no_packs">No icon packs found</string>
+    <string name="icon_picker_no_icons">This icon pack has no selectable icons</string>
+    <string name="icon_picker_no_matching_icons">No icons match your search</string>
 
     <string name="app_info_unknown">Unknown</string>
     <string name="icon_pack_use_global">Use global icon pack</string>
+    <string name="icon_picker_loading">Loading icons…</string>
+    <string name="icon_picker_reset">Reset custom icon</string>
 </resources>
