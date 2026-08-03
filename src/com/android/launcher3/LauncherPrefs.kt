@@ -388,14 +388,14 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
 
         @JvmField val SELECT_TIP_SEEN = backedUpItem("launcher.select_tip_seen", false)
 
-        @JvmField val SHOW_HOTSEAT_QSB = backedUpItem("pref_show_hotseat_qsb", false)
+        @JvmField val SHOW_HOTSEAT_QSB = backedUpItem("pref_show_hotseat_qsb", true)
+
+        @JvmField val DOCK_AI_MUSIC_SEARCH = backedUpItem("pref_dock_ai_music_search", false)
+
+        @JvmField val QSB_OUTER_OPACITY = backedUpItem("pref_qsb_outer_opacity", 70)
 
         @JvmStatic
         fun isHotseatQsbEnabled(context: Context): Boolean {
-            if (!Flags.enableQsbOnHotseat()) {
-                return false
-            }
-
             return try {
                 get(context).get(SHOW_HOTSEAT_QSB)
             } catch (ignored: IllegalStateException) {

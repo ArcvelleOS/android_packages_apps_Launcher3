@@ -789,4 +789,9 @@
     <string name="folder_thumbnail_set">Folder thumbnail</string>
     <string name="folder_thumbnail_reset">Reset thumbnail</string>
     <string name="folder_thumbnail_failed">Couldn\'t use that image</string>
+
+    <string name="label_search">Search</string>
+    <string name="label_voice_search">Voice search</string>
+    <string name="label_lens">Google Lens</string>
+    <string name="label_ai_mode">Assistant search</string>
 </resources>

@@ -35,6 +35,7 @@ import android.app.Person;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -969,6 +970,26 @@ public final class Utilities {
             }
             android.os.Process.killProcess(android.os.Process.myPid());
         });
+    }
+
+    public static boolean isPackageEnabled(String packageName, Context context) {
+        try {
+            return context.getPackageManager().getApplicationInfo(packageName, 0).enabled;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static boolean isGSAEnabled(Context context) {
+        return isPackageEnabled(GSA_PACKAGE, context);
+    }
+
+    public static boolean isAiMusicSearchEnabled(Context context) {
+        return LauncherPrefs.get(context).get(LauncherPrefs.DOCK_AI_MUSIC_SEARCH);
+    }
+
+    public static int getQsbOuterOpacity(Context context) {
+        return LauncherPrefs.get(context).get(LauncherPrefs.QSB_OUTER_OPACITY);
     }
 
     public static boolean isWorkspaceEditAllowed(Context context) {

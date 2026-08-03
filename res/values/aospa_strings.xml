@@ -98,4 +98,9 @@
     <string name="trust_apps_info_hidden">Hidden apps and their widgets are hidden from the drawer</string>
     <string name="trust_apps_info_protected">Protected apps require authentication to be opened from the launcher</string>
 
+
+    <string name="dock_ai_music_search_title">Music search</string>
+    <string name="dock_ai_music_search_summary">Start music search when pressing the AI mode button</string>
+    <string name="qsb_outer_opacity_title">Search bar outer opacity</string>
+    <string name="qsb_outer_opacity_summary">Adjust the opacity of the search bar outer shape</string>
 </resources>
