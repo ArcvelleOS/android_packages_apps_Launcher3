@@ -34,9 +34,3 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
-flag {
-  name: "enable_qsb_on_hotseat"
-  namespace: "launcher_search"
-  description: "Enable Search App's widget on hotseat"
-  bug: "405226308"
-}

@@ -110,19 +110,14 @@ public class Hotseat extends CellLayout implements Insettable {
     public Hotseat(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
-        if (Flags.enableQsbOnHotseat()) {
-            mQsb = LauncherComponentProvider.get(context).getQsbWidgetFactory().createView(this);
-            addView(mQsb);
-            if (mQsb instanceof Reorderable qsbReorderable) {
-                mQsbTranslationX = qsbReorderable.getTranslateDelegate()
-                        .getTranslationX(MultiTranslateDelegate.INDEX_NAV_BAR_ANIM);
-            }
-            mQsbAlphaChannels = new MultiValueAlpha(mQsb, ALPHA_CHANNEL_CHANNELS_COUNT);
-            mQsbAlphaChannels.setUpdateVisibility(true);
-        } else {
-            mQsb = null;
-            mQsbAlphaChannels = null;
+        mQsb = LauncherComponentProvider.get(context).getQsbWidgetFactory().createView(this);
+        addView(mQsb);
+        if (mQsb instanceof Reorderable qsbReorderable) {
+            mQsbTranslationX = qsbReorderable.getTranslateDelegate()
+                    .getTranslationX(MultiTranslateDelegate.INDEX_NAV_BAR_ANIM);
         }
+        mQsbAlphaChannels = new MultiValueAlpha(mQsb, ALPHA_CHANNEL_CHANNELS_COUNT);
+        mQsbAlphaChannels.setUpdateVisibility(true);
 
         mIconsAlphaChannels = new MultiValueAlpha(getShortcutsAndWidgets(),
                 ALPHA_CHANNEL_CHANNELS_COUNT);

@@ -179,6 +179,10 @@
     <!-- All Apps -->
     <!-- Search bar text in the apps view. [CHAR_LIMIT=50] -->
     <string name="all_apps_search_bar_hint">Search apps</string>
+    <string name="qsb_search_content_description">Search</string>
+    <string name="qsb_voice_content_description">Voice Search</string>
+    <string name="qsb_lens_content_description">Google Lens</string>
+    <string name="qsb_ai_content_description">AI Search</string>
     <!-- Loading apps text. [CHAR_LIMIT=50] -->
     <string name="all_apps_loading_message">Loading apps&#8230;</string>
     <!-- No-search-results text. [CHAR_LIMIT=50] -->

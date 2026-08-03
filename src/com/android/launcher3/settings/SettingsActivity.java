@@ -60,7 +60,6 @@ import androidx.preference.TwoStatePreference;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.BuildConfig;
-import com.android.launcher3.Flags;
 import com.android.launcher3.InvariantDeviceProfile;
 import com.android.launcher3.LauncherAppState;
 import com.android.launcher3.LauncherFiles;
@@ -433,8 +432,7 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                     return launcherApps != null &&
                             launcherApps.isPackageEnabled(Utilities.GSA_PACKAGE, myUserHandle());
                 case SHOW_HOTSEAT_QSB_KEY:
-                    return Flags.enableQsbOnHotseat() && launcherApps != null &&
-                            launcherApps.isPackageEnabled(Utilities.GSA_PACKAGE, myUserHandle());
+                    return true;
                 case IconDatabase.KEY_ICON_PACK:
                     setupIconPackPreference(preference);
                     return true;
