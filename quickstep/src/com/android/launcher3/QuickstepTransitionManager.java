@@ -1029,8 +1029,11 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
                             : ANIMATION_DELAY_NAV_FADE_IN,
                     ANIMATION_NAV_FADE_IN_DURATION, getAppLaunchDuration()));
 
-            FloatProp mBlurRadius = new FloatProp(0f, mMaxBlurRadius, DECELERATE_1_5);
-            FloatProp mBlurScrimAlpha = new FloatProp(0f, scrimAlpha, DECELERATE_1_5);
+            long blurDuration = (long) (getAppLaunchDuration() * 0.75f);
+            FloatProp mBlurRadius = new FloatProp(0f, mMaxBlurRadius, clampToDuration(
+                    DECELERATE_1_5, 0, blurDuration, getAppLaunchDuration()));
+            FloatProp mBlurScrimAlpha = new FloatProp(0f, scrimAlpha, clampToDuration(
+                    DECELERATE_1_5, 0, blurDuration, getAppLaunchDuration()));
 
             @Override
             public void onUpdate(float percent, boolean initOnly) {
