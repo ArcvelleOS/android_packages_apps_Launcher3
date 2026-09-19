@@ -16,7 +16,10 @@
 
 package com.android.launcher3.graphics.theme
 
+import android.content.Context
+import android.content.res.Configuration
 import com.android.launcher3.icons.IconThemeController
+import com.android.launcher3.icons.mono.ColorList
 import com.android.launcher3.icons.mono.MonoIconThemeController
 import com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCHER_THEMED_ICON_ENABLED
 import com.android.launcher3.logging.StatsLogManager.StatsLogger
@@ -40,12 +43,37 @@ interface IconThemeFactory {
 object MonoIconThemeFactory : IconThemeFactory {
 
     override fun createController(themeId: String): IconThemeController? =
-        if (themeId == MONO_THEME_CONTROLLER.themeID) MONO_THEME_CONTROLLER else null
+        when (themeId) {
+            MONO_THEME_CONTROLLER.themeID -> MONO_THEME_CONTROLLER
+            NOTHING_THEME_ID -> NOTHING_THEME_CONTROLLER
+            else -> null
+        }
 
     const val MONO_FACTORY_ID = "mono-icons"
 
     // Use a constant to allow equality check in verifyIconState
     val MONO_THEME_CONTROLLER = MonoIconThemeController(shouldForceThemeIcon = true)
+
+    const val NOTHING_THEME_ID = "nothing-style-v1"
+
+    // PenguinOS-inspired sizing, supplied through the theme controller so pack artwork
+    // and other processes using the shared icon library retain their own rendering.
+    private val NOTHING_THEME_CONTROLLER = MonoIconThemeController(
+        shouldForceThemeIcon = true,
+        colorProvider = ::nothingColors,
+        foregroundScale = 0.5f,
+    )
+
+    private fun nothingColors(context: Context): ColorList {
+        val res = context.resources
+        val night = (res.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        val bg = res.getColor(if (night) android.R.color.system_neutral1_900
+            else android.R.color.system_neutral1_100, context.theme)
+        val fg = res.getColor(if (night) android.R.color.system_neutral1_50
+            else android.R.color.system_neutral1_900, context.theme)
+        return ColorList(bg, fg, bg, bg, fg)
+    }
 
     override fun logThemeEvent(themeId: String, logger: StatsLogger) {
         logger.log(LAUNCHER_THEMED_ICON_ENABLED)

@@ -151,6 +151,9 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         } else if (Utilities.KEY_ALLAPPS_SUGGESTIONS.equals(key)
                 || Utilities.KEY_HOTSEAT_SUGGESTIONS.equals(key)) {
             LauncherAppState.getInstance(this).getModel().forceReload("app_suggestions_changed");
+        } else if (LauncherPrefs.NOTHING_STYLE_ICONS.getSharedPrefKey().equals(key)) {
+            // Rebind views whose themed-drawer behavior is determined at construction time.
+            LauncherAppState.setNeedsRestart();
         }
     }
 

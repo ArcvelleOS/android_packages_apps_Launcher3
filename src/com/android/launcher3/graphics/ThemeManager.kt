@@ -31,6 +31,8 @@ import com.android.launcher3.display.OverlayChangeHandler
 import com.android.launcher3.graphics.ShapeDelegate.Companion.DEFAULT_PATH_SIZE_INT
 import com.android.launcher3.graphics.ShapeDelegate.Companion.pickBestShape
 import com.android.launcher3.graphics.theme.IconThemeFactory
+import com.android.launcher3.graphics.theme.MonoIconThemeFactory.MONO_FACTORY_ID
+import com.android.launcher3.graphics.theme.MonoIconThemeFactory.NOTHING_THEME_ID
 import com.android.launcher3.graphics.theme.ThemePreference
 import com.android.launcher3.graphics.theme.ThemePreference.Companion.MONO_THEME_VALUE
 import com.android.launcher3.icons.DotRenderer.IconShapeInfo
@@ -74,8 +76,12 @@ constructor(
 
     @Deprecated("Use [ThemePreference] instead")
     var isMonoThemeEnabled
-        set(value) = themePreference.setValue(if (value) MONO_THEME_VALUE else null)
-        get() = MONO_THEME_VALUE == themePreference.value
+        set(value) {
+            if (!value) prefs.put(LauncherPrefs.NOTHING_STYLE_ICONS, false)
+            themePreference.setValue(if (value) MONO_THEME_VALUE else null)
+        }
+        get() = prefs.get(LauncherPrefs.NOTHING_STYLE_ICONS) ||
+            MONO_THEME_VALUE == themePreference.value
 
     val themeController
         get() = iconState.themeController
@@ -101,12 +107,13 @@ constructor(
         lifecycle.addCloseable(overlayChangeHandler.addCallback { verifyIconState() })
 
         val prefListener = LauncherPrefChangeListener {
-            if (it == PREF_ICON_SHAPE.sharedPrefKey) verifyIconState()
+            if (it == PREF_ICON_SHAPE.sharedPrefKey ||
+                it == LauncherPrefs.NOTHING_STYLE_ICONS.sharedPrefKey) verifyIconState()
         }
-        prefs.addListener(prefListener, PREF_ICON_SHAPE)
+        prefs.addListener(prefListener, PREF_ICON_SHAPE, LauncherPrefs.NOTHING_STYLE_ICONS)
         lifecycle.addCloseable(themePreference.forEach(mainExecutor) { verifyIconState() })
         lifecycle.addCloseable {
-            prefs.removeListener(prefListener, PREF_ICON_SHAPE)
+            prefs.removeListener(prefListener, PREF_ICON_SHAPE, LauncherPrefs.NOTHING_STYLE_ICONS)
             iconState.closeController()
         }
     }
@@ -183,7 +190,12 @@ constructor(
                     ShapeDelegate.GenericPathShape(path)
                 }
 
-        val themeKey = themePreference.value
+        val themeKey = if (prefs.get(LauncherPrefs.NOTHING_STYLE_ICONS)) {
+            ThemePreference.ThemeValue(
+                MONO_FACTORY_ID,
+                NOTHING_THEME_ID,
+            )
+        } else themePreference.value
         val themeCode = themeKey?.toString() ?: "no-theme"
 
         val iconControllerFactory =

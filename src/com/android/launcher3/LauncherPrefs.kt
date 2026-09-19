@@ -262,6 +262,7 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
             }
 
         @JvmField val ALLAPPS_THEMED_ICONS = backedUpItem("pref_allapps_themed_icons", false)
+        @JvmField val NOTHING_STYLE_ICONS = backedUpItem("pref_nothing_style_icons", false)
         @JvmField val OVERSCROLL_STIFFNESS = backedUpItem("pref_overscroll_stiffness", 300)
         @JvmField val OVERSCROLL_DAMPING_RATIO = backedUpItem("pref_overscroll_damping_ratio", 75)
         @JvmField val OVERSCROLL_MAX_STRETCH = backedUpItem("pref_overscroll_max_stretch", 12)
