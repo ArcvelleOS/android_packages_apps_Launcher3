@@ -18,4 +18,10 @@
     </string-array>
     <string name="cos_app_animations_title">ColorOS app animations</string>
     <string name="cos_app_animations_summary">Spring opening and closing with a scaling home screen</string>
+    <string name="show_smartspace_title">At a Glance</string>
+    <string name="show_smartspace_summary">Show date, weather and event cards in an empty row on the first home page</string>
+    <string name="smartspace_no_space">Make room for At a Glance by clearing one full row on the first home page.</string>
+    <string name="smartspace_existing_widget">Remove the existing At a Glance widget from the first home page before enabling this option.</string>
+    <string name="smartspace_no_provider">The system Smartspace provider is unavailable. The date is shown instead.</string>
+    <string name="smartspace_open_calendar">Open calendar</string>
 </resources>

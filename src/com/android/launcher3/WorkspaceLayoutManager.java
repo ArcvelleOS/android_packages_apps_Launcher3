@@ -161,7 +161,7 @@ public interface WorkspaceLayoutManager {
         //    2. DuplicateClickableBoundsCheck failure when the bounds of
         //    search_container_workspace doesn't match its draggable child.
         // Retain the condition to avoid regression of the two issues above.
-        if (childId != R.id.search_container_workspace) {
+        if (childId != R.id.search_container_workspace && childId != R.id.launcher_smartspace) {
             child.setOnLongClickListener(getWorkspaceChildOnLongClickListener());
         }
         if (child instanceof DropTarget) {

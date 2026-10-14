@@ -1136,6 +1136,9 @@ public class Launcher extends StatefulActivity<LauncherState>
         TraceHelper.INSTANCE.beginSection(ON_RESUME_EVT);
         super.onResume();
         mLauncherUiState.setIsResumedActivity(true);
+        com.android.launcher3.smartspace.AtAGlanceView smartspace =
+                findViewById(R.id.launcher_smartspace);
+        if (smartspace != null) smartspace.setResumed(true);
         LauncherAppState.checkIfRestartNeeded(this);
         DragView.removeAllViews(this);
         TraceHelper.INSTANCE.endSection();
@@ -1148,6 +1151,9 @@ public class Launcher extends StatefulActivity<LauncherState>
 
         super.onPause();
         mLauncherUiState.setIsResumedActivity(false);
+        com.android.launcher3.smartspace.AtAGlanceView smartspace =
+                findViewById(R.id.launcher_smartspace);
+        if (smartspace != null) smartspace.setResumed(false);
         mDragController.cancelDrag();
         mLastTouchUpTime = -1;
         mDropTargetBar.animateToVisibility(false);

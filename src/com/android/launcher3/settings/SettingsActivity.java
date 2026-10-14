@@ -25,6 +25,7 @@ import static com.android.launcher3.BuildConfig.IS_STUDIO_BUILD;
 import static com.android.launcher3.InvariantDeviceProfile.TYPE_MULTI_DISPLAY;
 import static com.android.launcher3.InvariantDeviceProfile.TYPE_TABLET;
 import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
+import static com.android.launcher3.util.Executors.MODEL_EXECUTOR;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -40,6 +41,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -54,6 +56,7 @@ import androidx.preference.PreferenceFragmentCompat.OnPreferenceStartScreenCallb
 import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceGroup.PreferencePositionCallback;
 import androidx.preference.PreferenceScreen;
+import androidx.preference.TwoStatePreference;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.android.launcher3.BuildConfig;
@@ -151,6 +154,8 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         } else if (Utilities.KEY_ALLAPPS_SUGGESTIONS.equals(key)
                 || Utilities.KEY_HOTSEAT_SUGGESTIONS.equals(key)) {
             LauncherAppState.getInstance(this).getModel().forceReload("app_suggestions_changed");
+        } else if (LauncherPrefs.SHOW_SMARTSPACE.getSharedPrefKey().equals(key)) {
+            LauncherAppState.getInstance(this).getModel().forceReload("smartspace_changed");
         } else if (LauncherPrefs.NOTHING_STYLE_ICONS.getSharedPrefKey().equals(key)
                 || LauncherPrefs.COS_APP_ANIMATIONS.getSharedPrefKey().equals(key)) {
             // Rebind views whose themed-drawer behavior is determined at construction time.
@@ -230,6 +235,8 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         private String mHighLightKey;
 
         private boolean mPreferenceHighlighted = false;
+        private int mSmartspaceRequest;
+        private SmartspaceSettings mSmartspaceSettings;
 
         @Override
         public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -285,6 +292,7 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                 });
             }
 
+            mSmartspaceSettings = new SmartspaceSettings(this);
             initPreferenceGroup(screen);
 
             // If the target preference is not in the current preference screen, find the parent
@@ -430,6 +438,39 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                 case IconDatabase.KEY_ICON_PACK:
                     setupIconPackPreference(preference);
                     return true;
+                case "pref_show_smartspace":
+                    preference.setOnPreferenceChangeListener((pref, value) -> {
+                        final int request = ++mSmartspaceRequest;
+                        if (!Boolean.TRUE.equals(value)) return true;
+                        final android.content.Context context = requireContext();
+                        pref.setEnabled(false);
+                        MODEL_EXECUTOR.execute(() -> {
+                            int result;
+                            try {
+                                result = com.android.launcher3.smartspace.AtAGlanceModel.findAvailableRow(
+                                        LauncherAppState.getInstance(context).getModel().getModelDbController(),
+                                        InvariantDeviceProfile.INSTANCE.get(context).numRows);
+                            } catch (RuntimeException e) {
+                                result = com.android.launcher3.smartspace.AtAGlanceModel.NO_SPACE;
+                            }
+                            final int row = result;
+                            MAIN_EXECUTOR.execute(() -> {
+                                if (!isAdded() || request != mSmartspaceRequest) return;
+                                pref.setEnabled(true);
+                                if (row >= 0) {
+                                    ((TwoStatePreference) pref).setChecked(true);
+                                } else {
+                                    Toast.makeText(context,
+                                            row == com.android.launcher3.smartspace.AtAGlanceModel.EXISTING_WIDGET
+                                                    ? R.string.smartspace_existing_widget
+                                                    : R.string.smartspace_no_space,
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        });
+                        return false;
+                    });
+                    return true;
             }
             return true;
         }
@@ -445,6 +486,7 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         @Override
         public void onResume() {
             super.onResume();
+            if (mSmartspaceSettings != null) mSmartspaceSettings.start();
 
             Preference iconPackPref = findPreference(IconDatabase.KEY_ICON_PACK);
             if (iconPackPref != null) {
@@ -465,7 +507,14 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         }
 
         @Override
+        public void onPause() {
+            if (mSmartspaceSettings != null) mSmartspaceSettings.stop();
+            super.onPause();
+        }
+
+        @Override
         public void onDestroy() {
+            mSmartspaceRequest++;
             super.onDestroy();
             if (mSettingCacheSafeCloseable != null) {
                 mSettingCacheSafeCloseable.close();

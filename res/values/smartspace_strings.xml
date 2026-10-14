@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="smartspace_events_title">Smartspace events</string>
+    <string name="smartspace_events_summary">Choose which cards appear. Cards are supplied by the system Smartspace provider; availability depends on the provider.</string>
+    <string name="smartspace_weather">Weather</string>
+    <string name="smartspace_calendar">Calendar</string>
+    <string name="smartspace_music">Music</string>
+    <string name="smartspace_alarms">Alarms</string>
+    <string name="smartspace_flashlight">Flashlight</string>
+    <string name="smartspace_bluetooth">Bluetooth</string>
+    <string name="smartspace_timers">Timers and stopwatch</string>
+    <string name="smartspace_reminders">Reminders</string>
+    <string name="smartspace_travel">Travel and commute</string>
+    <string name="smartspace_sports">Sports</string>
+    <string name="smartspace_packages">Package tracking</string>
+    <string name="smartspace_finance">Finance</string>
+    <string name="smartspace_shopping">Shopping</string>
+    <string name="smartspace_fitness">Fitness and sleep</string>
+    <string name="smartspace_doorbell">Doorbell</string>
+    <string name="smartspace_other">Other provider events</string>
+    <string name="smartspace_weather_with_conditions">%1$s · %2$s</string>
+    <string name="smartspace_action_unavailable">This action is no longer available</string>
+</resources>

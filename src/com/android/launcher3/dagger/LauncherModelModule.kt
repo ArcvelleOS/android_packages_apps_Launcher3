@@ -16,6 +16,12 @@
 
 package com.android.launcher3.dagger
 
+import android.content.Context
+import android.os.UserManager
+import com.android.launcher3.InvariantDeviceProfile
+import com.android.launcher3.LauncherPrefs
+import com.android.launcher3.model.ModelDbController
+import com.android.launcher3.smartspace.AtAGlanceModel
 import com.android.launcher3.ConstantItem
 import com.android.launcher3.LauncherModel
 import com.android.launcher3.LifecycleTracker
@@ -48,6 +54,7 @@ import dagger.multibindings.IntoSet
 import dagger.multibindings.Multibinds
 import dagger.multibindings.StringKey
 import javax.inject.Named
+import javax.inject.Provider
 
 @Module
 abstract class LauncherModelModule {
@@ -69,6 +76,22 @@ abstract class LauncherModelModule {
     @Multibinds @Named(NAMED_CUSTOM_WIDGETS) abstract fun extraCustomWidgets(): Set<CustomWidget>
 
     companion object {
+
+        @Provides
+        @JvmStatic
+        @ElementsIntoSet
+        @Named("MODEL_ITEMS")
+        fun atAGlanceItems(
+            @ApplicationContext context: Context,
+            prefs: LauncherPrefs,
+            idp: InvariantDeviceProfile,
+            db: Provider<ModelDbController>,
+        ): Set<ItemInfo> {
+            if (context.getSystemService(UserManager::class.java)?.isUserUnlocked != true ||
+                !prefs.get(LauncherPrefs.SHOW_SMARTSPACE)) return emptySet()
+            val row = AtAGlanceModel.findAvailableRow(db.get(), idp.numRows)
+            return if (row >= 0) setOf(AtAGlanceModel(idp.numColumns, row)) else emptySet()
+        }
 
         @Provides
         @IntoMap
