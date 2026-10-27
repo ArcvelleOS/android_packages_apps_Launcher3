@@ -30,6 +30,7 @@ public class ListenerView extends AbstractFloatingView {
 
     private final @FloatingViewType int mType;
     private Runnable mCloseListener;
+    private boolean mCloseOnTouchDown = true;
 
     public ListenerView(Context context, @FloatingViewType int type) {
         this(context, /* attrs= */ null, type);
@@ -48,6 +49,8 @@ public class ListenerView extends AbstractFloatingView {
     public void setListener(Runnable listener) {
         mCloseListener = listener;
     }
+
+    public void setCloseOnTouchDown(boolean close) { mCloseOnTouchDown = close; }
 
     @Override
     protected void onAttachedToWindow() {
@@ -82,7 +85,7 @@ public class ListenerView extends AbstractFloatingView {
 
     @Override
     public boolean onControllerInterceptTouchEvent(MotionEvent ev) {
-        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+        if (mCloseOnTouchDown && ev.getAction() == MotionEvent.ACTION_DOWN) {
             handleClose(false);
         }
         // We want other views to be able to intercept the touch so we return false here.

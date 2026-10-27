@@ -39,6 +39,7 @@ import com.android.app.animation.Interpolators;
 import com.android.launcher3.Flags;
 import com.android.launcher3.LauncherAnimUtils;
 import com.android.launcher3.LauncherState;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.anim.AnimatorPlaybackController;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.statehandlers.DesktopVisibilityController;
@@ -195,6 +196,7 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
                 floatingIconView.setOnTargetChangeListener(
                         mSiblingAnimation::onTargetPositionChanged);
                 floatingIconView.setFastFinishRunnable(mSiblingAnimation::end);
+                floatingIconView.setAllowParallelAnimation(anim.isCos());
             }
 
             @Override
@@ -206,7 +208,10 @@ public class LauncherSwipeHandlerV2 extends AbsSwipeUpHandler<
                 // We want the icon alpha to be 1 once this threshold is met, so that it can be
                 // seen morphing into the icon shape. But before the threshold, we want to limit
                 // the alpha to reduce the blur effect behind the window.
-                float iconAlpha = Interpolators.clampToProgress(progress, 0f, windowAlphaThreshold);
+                progress = Utilities.boundToRange(progress, 0f, 1f);
+                float iconAlpha = mSiblingAnimation != null && mSiblingAnimation.isCos()
+                        ? mSiblingAnimation.getCosFadeProgress()
+                        : Interpolators.clampToProgress(progress, 0f, windowAlphaThreshold);
                 floatingIconView.update(iconAlpha, currentRect, progress, windowAlphaThreshold,
                         radius, false, overlayAlpha);
             }

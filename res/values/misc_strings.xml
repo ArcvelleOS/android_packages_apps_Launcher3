@@ -16,4 +16,6 @@
         <item>@string/icon_style_default</item>
         <item>@string/nothing_style_icons_title</item>
     </string-array>
+    <string name="cos_app_animations_title">ColorOS app animations</string>
+    <string name="cos_app_animations_summary">Spring opening and closing with a scaling home screen</string>
 </resources>

@@ -472,6 +472,20 @@ public class QuickstepLauncher extends Launcher implements RecentsViewContainer,
 
     @Override
     public RunnableList startActivitySafely(View v, Intent intent, ItemInfo item) {
+        if (v != null && item != null && item.itemType == Favorites.ITEM_TYPE_APPLICATION
+                && com.android.quickstep.util.CosAppAnimation.isEnabled(this)) {
+            RunnableList deferred = new RunnableList();
+            if (com.android.quickstep.AbsSwipeUpHandler.finishHomeFlightForLaunch(() -> {
+                if (isDestroyed() || !v.isAttachedToWindow() || v.getTag() != item
+                        || !getSystemService(android.os.PowerManager.class).isInteractive()) {
+                    deferred.executeAllAndDestroy();
+                    return;
+                }
+                RunnableList actual = startActivitySafely(v, intent, item);
+                if (actual == null) deferred.executeAllAndDestroy();
+                else actual.add(deferred::executeAllAndDestroy);
+            }, deferred::executeAllAndDestroy)) return deferred;
+        }
         PredictionRowView<?> predictionRowView =
                 getAppsView().getFloatingHeaderView().findFixedRowByType(PredictionRowView.class);
         // Pause the prediction row updates until the transition (if it exists) ends.

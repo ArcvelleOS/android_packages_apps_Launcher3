@@ -67,6 +67,7 @@ public abstract class SwipeUpAnimationLogic implements
     protected DeviceProfile mDp;
 
     protected final Context mContext;
+    protected SpringAnimationRunner mCosHomeRunner;
     protected final GestureState mGestureState;
 
     protected RemoteTargetHandle[] mRemoteTargetHandles;
@@ -186,6 +187,7 @@ public abstract class SwipeUpAnimationLogic implements
 
         protected float mSwipeVelocity;
         protected float mAlphaEndProgress = ALPHA_END_PROGRESS;
+        protected RectFSpringAnim mWindowAnimation;
 
         /**
          * Returns true if we know the home animation involves an item in the hotseat.
@@ -235,7 +237,7 @@ public abstract class SwipeUpAnimationLogic implements
             // No-op
         }
 
-        public void setAnimation(RectFSpringAnim anim) { }
+        public void setAnimation(RectFSpringAnim anim) { mWindowAnimation = anim; }
 
         public void update(RectF currentRect, float progress, float radius, int overlayAlpha) { }
 
@@ -246,6 +248,9 @@ public abstract class SwipeUpAnimationLogic implements
          * @return The current alpha to set on the animating app window.
          */
         protected float getWindowAlpha(float progress) {
+            if (mWindowAnimation != null && mWindowAnimation.isCos()) {
+                return 1f - mWindowAnimation.getCosFadeProgress();
+            }
             // Alpha interpolates between [1, 0] between progress values [start, end]
             final float start = ALPHA_START_PROGRESS;
             final float end = mAlphaEndProgress;
@@ -405,7 +410,10 @@ public abstract class SwipeUpAnimationLogic implements
                 ? new TaskbarHotseatSpringConfig(mContext, mDp, startRect, targetRect)
                 : (homeAnimationFactory.isWidget()
                         ? new WidgetSpringConfig(mContext, mDp, startRect, targetRect)
-                        : new DefaultSpringConfig(mContext, mDp, startRect, targetRect)));
+                        : targetTaskView == null
+                                && com.android.quickstep.util.CosAppAnimation.isEnabled(mContext)
+                                ? new RectFSpringAnim.CosSpringConfig(mContext, mDp, startRect, targetRect)
+                                : new DefaultSpringConfig(mContext, mDp, startRect, targetRect)));
 
         homeAnimationFactory.setAnimation(anim);
 
@@ -418,6 +426,7 @@ public abstract class SwipeUpAnimationLogic implements
                 invariantStartRect);
         anim.addAnimatorListener(runner);
         anim.addOnUpdateListener(runner);
+        mCosHomeRunner = anim.isCos() && homeAnimationFactory.isAnimatingIntoIcon() ? runner : null;
         return anim;
     }
 
@@ -432,6 +441,12 @@ public abstract class SwipeUpAnimationLogic implements
         final RectF mWindowCurrentRect = new RectF();
         final Matrix mHomeToWindowPositionMap;
         private final TransformParams mLocalTransformParams;
+        private boolean mWindowDetached;
+        private boolean mHomeFinished;
+        private com.android.quickstep.util.CosHomeSnapshot mSnapshot;
+        private final RectF mLastHomeRect = new RectF();
+        private float mLastRadius;
+        private float mLastAlpha = 1f;
         final HomeAnimationFactory mAnimationFactory;
 
         final AnimatorPlaybackController mHomeAnim;
@@ -487,10 +502,11 @@ public abstract class SwipeUpAnimationLogic implements
 
         @Override
         public void onUpdate(RectF currentRect, float progress) {
+            progress = Utilities.boundToRange(progress, 0f, 1f);
             float cornerRadius = Utilities.mapRange(progress, mStartRadius, mEndRadius);
             float alpha = mAnimationFactory.getWindowAlpha(progress);
 
-            mHomeAnim.setPlayFraction(progress);
+            if (!mWindowDetached) mHomeAnim.setPlayFraction(progress);
             if (mTargetTaskView == null) {
                 mHomeToWindowPositionMap.mapRect(mWindowCurrentRect, currentRect);
 
@@ -543,8 +559,14 @@ public abstract class SwipeUpAnimationLogic implements
                 mLocalTransformParams.setCornerRadius(mStartRadius);
             }
 
-            mLocalTransformParams.applySurfaceParams(
-                    mLocalTransformParams.createSurfaceParams(this));
+            if (!mWindowDetached) {
+                mLocalTransformParams.applySurfaceParams(
+                        mLocalTransformParams.createSurfaceParams(this));
+            }
+            mLastHomeRect.set(currentRect);
+            mLastRadius = cornerRadius;
+            mLastAlpha = alpha;
+            if (mSnapshot != null) mSnapshot.update(currentRect, cornerRadius, alpha);
 
             mAnimationFactory.update(
                     currentRect,
@@ -628,6 +650,7 @@ public abstract class SwipeUpAnimationLogic implements
 
         @Override
         public void onCancel() {
+            removeSnapshot();
             cleanUp();
             mAnimationFactory.onCancel();
         }
@@ -686,8 +709,34 @@ public abstract class SwipeUpAnimationLogic implements
 
         @Override
         public void onAnimationSuccess(Animator animator) {
+            removeSnapshot();
             cleanUp();
-            mHomeAnim.getAnimationPlayer().end();
+            finishHomeAnimation();
+        }
+
+        public void finishHomeAnimation() {
+            if (!mHomeFinished) {
+                mHomeFinished = true;
+                mHomeAnim.getAnimationPlayer().end();
+            }
+        }
+
+        public void detachWindow() { mWindowDetached = true; }
+
+        public com.android.quickstep.util.CosHomeSnapshot createSnapshot(
+                android.graphics.Bitmap bitmap, Rect bounds) {
+            if (mTargetTaskView != null || mAnimationFactory.isWidget() || mLastHomeRect.isEmpty()) {
+                return null;
+            }
+            mSnapshot = new com.android.quickstep.util.CosHomeSnapshot(
+                    mContext, bitmap, mCropRectF, bounds);
+            mSnapshot.update(mLastHomeRect, mLastRadius, mLastAlpha);
+            return mSnapshot;
+        }
+
+        private void removeSnapshot() {
+            if (mSnapshot != null) mSnapshot.remove();
+            mSnapshot = null;
         }
     }
 

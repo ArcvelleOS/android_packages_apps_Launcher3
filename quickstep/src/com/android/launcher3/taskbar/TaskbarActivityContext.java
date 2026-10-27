@@ -1790,6 +1790,30 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
     }
 
     protected void onTaskbarIconClicked(View view) {
+        Object tag = view.getTag();
+        RecentsViewInteractor recents = mControllers.uiController.getRecentsViewInteractor();
+        if (isPrimaryDisplay() && !isInDesktopMode() && !isTaskbarShowingDesktopTasks()
+                && (recents == null || !recents.isSplitSelectionActive())
+                && com.android.quickstep.util.CosAppAnimation.isEnabled(this)
+                && tag instanceof ItemInfo item && item.itemType == Favorites.ITEM_TYPE_APPLICATION
+                && (!(item instanceof WorkspaceItemInfo workspaceItem)
+                    || (!workspaceItem.isDisabled() && !workspaceItem.isPromise()))) {
+            Runnable launch = () -> getMainThreadHandler().post(() -> {
+                if (!isDestroyed() && view.getTag() == item && view.isAttachedToWindow()
+                        && getSystemService(android.os.PowerManager.class).isInteractive()) {
+                    onTaskbarIconClickedAfterHomeFlight(view);
+                }
+            });
+            Executors.MAIN_EXECUTOR.execute(() -> {
+                if (!com.android.quickstep.AbsSwipeUpHandler.finishHomeFlightForLaunch(
+                        launch, () -> { })) launch.run();
+            });
+            return;
+        }
+        onTaskbarIconClickedAfterHomeFlight(view);
+    }
+
+    private void onTaskbarIconClickedAfterHomeFlight(View view) {
         TaskbarUIController taskbarUIController = mControllers.uiController;
         RecentsViewInteractor recents = taskbarUIController.getRecentsViewInteractor();
         boolean shouldCloseAllOpenViews = true;

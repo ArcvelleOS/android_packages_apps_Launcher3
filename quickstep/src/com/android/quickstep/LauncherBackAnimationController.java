@@ -354,7 +354,9 @@ public class LauncherBackAnimationController {
             mLauncher.getDepthController().pauseBlursOnWindows(true);
             mLauncher.getDepthController().stateDepth.setValue(
                     LauncherState.BACKGROUND_APP.getDepth(mLauncher));
-            setLauncherScale(ScalingWorkspaceRevealAnim.MIN_SIZE);
+            setLauncherScale(com.android.quickstep.util.CosAppAnimation.isEnabled(mLauncher)
+                    ? com.android.quickstep.util.CosAppAnimation.HOME_SCALE
+                    : ScalingWorkspaceRevealAnim.MIN_SIZE);
         }
         if (mScrimLayer == null) {
             addScrimLayer();

@@ -57,6 +57,9 @@ import com.android.launcher3.graphics.ThemeManager;
  * Supports clipping the icon to/from its icon shape.
  */
 public class ClipIconView extends View implements ClipPathView {
+    private boolean mAllowScaleDown;
+
+    public void setAllowScaleDown(boolean allow) { mAllowScaleDown = allow; }
 
     private static final Rect sTmpRect = new Rect();
 
@@ -132,7 +135,7 @@ public class ClipIconView extends View implements ClipPathView {
         float minSize = Math.min(lp.width, lp.height);
         float scaleX = rect.width() / minSize;
         float scaleY = rect.height() / minSize;
-        float scale = Math.max(1f, Math.min(scaleX, scaleY));
+        float scale = Math.max(mAllowScaleDown ? 0.01f : 1f, Math.min(scaleX, scaleY));
         if (mTaskViewArtist != null) {
             mTaskViewArtist.taskViewDrawWidth = lp.width;
             mTaskViewArtist.taskViewDrawHeight = lp.height;
@@ -355,6 +358,7 @@ public class ClipIconView extends View implements ClipPathView {
     }
 
     void recycle() {
+        mAllowScaleDown = false;
         setBackground(null);
         mIsAdaptiveIcon = false;
         mForeground = null;

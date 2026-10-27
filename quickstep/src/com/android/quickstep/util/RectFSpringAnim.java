@@ -19,10 +19,12 @@ package com.android.quickstep.util;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.SystemClock;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
@@ -129,6 +131,10 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
     protected final float mDampingX;
     protected final float mDampingY;
     protected final float mRectStiffness;
+    private final float mRectDamping;
+    private final boolean mCos;
+    private long mCosStartTime;
+    private float mDurationScale;
 
     public RectFSpringAnim(SpringConfig config) {
         mStartRect = config.startRect;
@@ -143,12 +149,26 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         mDampingX = config.dampingX;
         mDampingY = config.dampingY;
         mRectStiffness = config.rectStiffness;
+        mRectDamping = config.rectDamping;
+        mCos = config instanceof CosSpringConfig;
 
         mCurrentY = getTrackedYFromRect(mStartRect);
     }
 
     public RectF getTargetRect() {
         return mTargetRect;
+    }
+
+    public boolean isCos() { return mCos; }
+
+    public boolean isRunning() { return mAnimsStarted && !isEnded(); }
+
+    public float getCosFadeProgress() {
+        if (mDurationScale <= 0 || isEnded()) return 1f;
+        float seconds = Math.max(0f,
+                (SystemClock.uptimeMillis() - mCosStartTime) / mDurationScale - 17f) / 1000f;
+        float wt = 30f * seconds;
+        return 1f - (1f + wt) * (float) Math.exp(-wt);
     }
 
     private float getTrackedYFromRect(RectF rect) {
@@ -203,6 +223,8 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
      * @param velocityPxPerMs Velocity of swipe in px/ms.
      */
     public void start(Context context, @Nullable DeviceProfile profile, PointF velocityPxPerMs) {
+        mCosStartTime = SystemClock.uptimeMillis();
+        mDurationScale = ValueAnimator.getDurationScale();
         // Only tell caller that we ended if both x and y animations have ended.
         OnAnimationEndListener onXEndListener = ((animation, canceled, centerX, velocityX) -> {
             mRectXAnimEnded = true;
@@ -257,7 +279,8 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
                         .setStartVelocity(yVelocityPxPerS)
                         .addEndListener(onYEndListener);
 
-        float dampingZ = rp.getFloat(R.dimen.swipe_up_rect_scale_damping_ratio_v2);
+        float dampingZ = mRectDamping > 0 ? mRectDamping
+                : rp.getFloat(R.dimen.swipe_up_rect_scale_damping_ratio_v2);
         mRectScaleAnim =
                 new SpringAnimation(this, RECT_SCALE_PROGRESS)
                         .setSpring(
@@ -265,7 +288,7 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
                                         .setStiffness(mRectStiffness)
                                         .setDampingRatio(dampingZ))
                         .setStartVelocity(velocityPxPerMs.y * minVisibleChange)
-                        .setMaxValue(1f)
+                        .setMaxValue(mCos ? 1.25f : 1f)
                         .setMinimumVisibleChange(minVisibleChange)
                         .addEndListener((animation, canceled, value, velocity) -> {
                             mRectScaleAnimEnded = true;
@@ -282,6 +305,7 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         for (Animator.AnimatorListener animatorListener : mAnimatorListeners) {
             animatorListener.onAnimationStart(null);
         }
+        if (mCos && !ValueAnimator.areAnimatorsEnabled()) end();
     }
 
     public void end() {
@@ -326,6 +350,10 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
                     mTargetRect.width());
             float currentHeight = Utilities.mapRange(mCurrentScaleProgress, mStartRect.height(),
                     mTargetRect.height());
+            if (mCos) {
+                currentWidth = Math.max(mTargetRect.width() * 0.8f, currentWidth);
+                currentHeight = Math.max(mTargetRect.height() * 0.8f, currentHeight);
+            }
             switch (mTracking) {
                 case TRACKING_TOP:
                     mCurrentRect.set(mCurrentCenterX - currentWidth / 2,
@@ -417,6 +445,7 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
         protected float dampingX;
         protected float dampingY;
         protected float rectStiffness;
+        protected float rectDamping = -1f;
         protected float minVisChange;
         protected int maxVelocityPxPerS;
 
@@ -433,6 +462,21 @@ public class RectFSpringAnim extends SurfaceReleaseCheck {
     /**
      * Standard spring configuration parameters.
      */
+    public static class CosSpringConfig extends DefaultSpringConfig {
+        public CosSpringConfig(Context context, DeviceProfile profile, RectF start, RectF target) {
+            super(context, profile, start, target);
+            tracking = TRACKING_CENTER;
+            stiffnessX = rectStiffness = 330f;
+            stiffnessY = 250f;
+            dampingX = 1f;
+            dampingY = CosAppAnimation.bounceDamping(
+                    6f * context.getResources().getDisplayMetrics().density,
+                    Math.abs(target.centerY() - start.centerY()));
+            rectDamping = CosAppAnimation.bounceDamping(
+                    0.05f * target.width(), start.width() - target.width());
+        }
+    }
+
     public static class DefaultSpringConfig extends SpringConfig {
 
         public DefaultSpringConfig(Context context, DeviceProfile deviceProfile,

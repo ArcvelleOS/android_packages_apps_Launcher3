@@ -89,7 +89,10 @@ class ScalingWorkspaceRevealAnim(
         val BLUR_INTERPOLATOR = Interpolators.clampToProgress(EMPHASIZED, 0f, 0.666f)
     }
 
-    private val animation = PendingAnimation(SCALE_DURATION_MS)
+    private val cosMotion = CosAppAnimation.isEnabled(launcher)
+    private val scaleDuration = if (cosMotion) CosAppAnimation.REVEAL_DURATION else SCALE_DURATION_MS
+    private val scaleInterpolator = if (cosMotion) CosAppAnimation.REVEAL else SCALE_INTERPOLATOR
+    private val animation = PendingAnimation(scaleDuration)
     private var blurLayer: SurfaceControl? = null
     private var surfaceTransactionApplier: SurfaceTransactionApplier =
         SurfaceTransactionApplier(launcher.dragLayer)
@@ -124,7 +127,7 @@ class ScalingWorkspaceRevealAnim(
             if (workspace.scaleX != MAX_SIZE) {
                 workspace.scaleX
             } else {
-                MIN_SIZE
+                if (cosMotion) CosAppAnimation.HOME_SCALE else MIN_SIZE
             }
 
         // Scale the Workspace and Hotseat around the same pivot.
@@ -134,20 +137,20 @@ class ScalingWorkspaceRevealAnim(
             WORKSPACE_SCALE_PROPERTY_FACTORY[SCALE_INDEX_WORKSPACE_STATE],
             fromSize,
             MAX_SIZE,
-            SCALE_INTERPOLATOR,
+            scaleInterpolator,
         )
         animation.addFloat(
             hotseat,
             HOTSEAT_SCALE_PROPERTY_FACTORY[SCALE_INDEX_WORKSPACE_STATE],
             fromSize,
             MAX_SIZE,
-            SCALE_INTERPOLATOR,
+            scaleInterpolator,
         )
 
         if (playAlphaReveal) {
             // Fade in quickly at the beginning of the animation, so the content doesn't look like
             // it's popping into existence out of nowhere.
-            val fadeClamp = FADE_DURATION_MS.toFloat() / SCALE_DURATION_MS
+            val fadeClamp = FADE_DURATION_MS.toFloat() / scaleDuration
             workspace.alpha = MIN_ALPHA
             animation.setFloat(
                 workspace,
@@ -168,13 +171,13 @@ class ScalingWorkspaceRevealAnim(
         }
 
         val transitionConfig = StateAnimationConfig()
-        transitionConfig.duration = SCALE_DURATION_MS
+        transitionConfig.duration = scaleDuration
 
         var depthController: LauncherDepthController? = null
         if (playBlur) {
             // Match the Wallpaper depth to the rest of the content.
             depthController = (launcher as? QuickstepLauncher)?.depthController
-            transitionConfig.setInterpolator(StateAnimationConfig.ANIM_DEPTH, SCALE_INTERPOLATOR)
+            transitionConfig.setInterpolator(StateAnimationConfig.ANIM_DEPTH, scaleInterpolator)
             depthController?.pauseBlursOnWindows(true) // Blurring is handled by the scrim layer.
             depthController?.stateDepth?.value = LauncherState.BACKGROUND_APP.getDepth(launcher)
             depthController?.setStateWithAnimation(

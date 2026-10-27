@@ -147,7 +147,7 @@ constructor(
     }
 
     /** Alpha interpolates between [1, 0] between progress values [start, end] */
-    private fun getWindowAlpha(progress: Float): Float =
+    open fun getWindowAlpha(progress: Float): Float =
         when {
             progress <= ALPHA_START_PROGRESS -> 1f
             progress >= alphaEndProgress -> 0f
