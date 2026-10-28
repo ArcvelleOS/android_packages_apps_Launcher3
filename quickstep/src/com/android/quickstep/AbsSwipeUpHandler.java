@@ -2380,7 +2380,9 @@ public abstract class AbsSwipeUpHandler<
         RemoteAnimationTarget target = targets == null ? null : targets.findTask(taskId);
         if (target == null) return false;
         ThumbnailData snapshot = mTaskSnapshotCache.get(taskId);
-        if (snapshot == null) snapshot = mRecentsAnimationController.screenshotTask(taskId);
+        if (snapshot == null) {
+            snapshot = mRecentsAnimationController.screenshotTask(taskId);
+        }
         android.graphics.Bitmap bitmap = snapshot == null ? null : snapshot.getThumbnail();
         var orientation = mRemoteTargetHandles[0].getTaskViewSimulator().getOrientationState();
         int rotation = orientation.getDisplayRotation();
@@ -2392,6 +2394,9 @@ public abstract class AbsSwipeUpHandler<
         if (bounds == null || bounds.isEmpty()) return false;
         com.android.quickstep.util.CosHomeSnapshot view = mCosHomeRunner.createSnapshot(bitmap, bounds);
         if (view == null) return false;
+        // Share a usable capture with the normal home-finish path. Do not cache a new capture
+        // before validation: the live-window fallback may need to request a fresh screenshot.
+        mTaskSnapshotCache.put(taskId, snapshot);
         view.attachTo(mContainer.getDragLayer());
         return true;
     }
