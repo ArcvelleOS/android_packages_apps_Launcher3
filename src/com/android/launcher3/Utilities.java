@@ -984,4 +984,8 @@ public final class Utilities {
         SharedPreferences prefs = LauncherPrefs.getPrefs(context.getApplicationContext());
         return prefs.getBoolean(KEY_ALLAPPS_SUGGESTIONS, true);
     }
+
+    public static boolean isAiMusicSearchEnabled(Context context) {
+        return LauncherPrefs.get(context).get(LauncherPrefs.DOCK_AI_MUSIC_SEARCH);
+    }
 }

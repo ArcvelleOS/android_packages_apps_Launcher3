@@ -51,6 +51,8 @@
     <!-- Search bar -->
     <string name="pref_show_hotseat_qsb_title">Show search bar</string>
     <string name="pref_show_hotseat_qsb_summary">At the bottom of your home screen</string>
+    <string name="dock_ai_music_search_title">Music search</string>
+    <string name="dock_ai_music_search_summary">Start music search when pressing the AI mode button</string>
 
     <!-- Open keyboard -->
     <string name="drawer_open_keyboard_title">Swipe up to start search</string>

@@ -10,6 +10,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.util.AttributeSet;
@@ -17,14 +18,18 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+
+import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.R;
 import com.android.launcher3.Reorderable;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.graphics.ThemeManager;
 import com.android.launcher3.util.HorizontalInsettableView;
 import com.android.launcher3.util.MultiTranslateDelegate;
 
 /** Pixel-style Google search pill used in the hotseat. */
-public class QsbLayout extends FrameLayout implements Reorderable, HorizontalInsettableView {
+public class QsbLayout extends FrameLayout implements Reorderable, HorizontalInsettableView,
+    SharedPreferences.OnSharedPreferenceChangeListener {
 
   private static final String GSA_PACKAGE = "com.google.android.googlequicksearchbox";
   private static final String LENS_ACTIVITY =
@@ -64,44 +69,62 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
     mAiModeButton = findViewById(R.id.ai_mode_button);
 
     setOnClickListener(v -> launchSearch());
-    mMicIcon.setOnClickListener(v -> launchVoiceSearch());
-    mLensIcon.setOnClickListener(v -> launchLens());
-    mAiModeButton.setOnClickListener(v -> launchAiSearch());
+    if (mMicIcon != null) mMicIcon.setOnClickListener(v -> launchVoiceSearch());
+    if (mLensIcon != null) mLensIcon.setOnClickListener(v -> launchLens());
+    if (mAiModeButton != null) mAiModeButton.setOnClickListener(v -> launchAiSearch());
     updateIcons();
   }
 
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
-    mThemeManager.addChangeListener(mThemeChangeListener);
+    if (mThemeManager != null) mThemeManager.addChangeListener(mThemeChangeListener);
+    LauncherPrefs.getPrefs(getContext()).registerOnSharedPreferenceChangeListener(this);
     updateIcons();
   }
 
   @Override
   protected void onDetachedFromWindow() {
-    mThemeManager.removeChangeListener(mThemeChangeListener);
+    if (mThemeManager != null) mThemeManager.removeChangeListener(mThemeChangeListener);
+    LauncherPrefs.getPrefs(getContext()).unregisterOnSharedPreferenceChangeListener(this);
     super.onDetachedFromWindow();
+  }
+
+  @Override
+  public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+    if (LauncherPrefs.DOCK_AI_MUSIC_SEARCH.getSharedPrefKey().equals(key)) {
+      updateIcons();
+    }
   }
 
   private void updateIcons() {
     boolean googleSearchAvailable = isGoogleSearchAvailable();
     boolean themedIconsEnabled = mThemeManager != null && mThemeManager.isIconThemeEnabled();
-    mGIcon.setImageResource(
+    if (mGIcon != null) mGIcon.setImageResource(
         googleSearchAvailable
             ? themedIconsEnabled ? R.drawable.ic_super_g_themed : R.drawable.ic_super_g_color
             : R.drawable.ic_allapps_search);
-    mMicIcon.setVisibility(googleSearchAvailable ? View.VISIBLE : View.GONE);
-    mAiModeButton.setVisibility(googleSearchAvailable ? View.VISIBLE : View.GONE);
+    if (mMicIcon != null) mMicIcon.setVisibility(googleSearchAvailable ? View.VISIBLE : View.GONE);
+    if (mAiModeButton != null) {
+      mAiModeButton.setVisibility(googleSearchAvailable ? View.VISIBLE : View.GONE);
+      boolean musicSearch = Utilities.isAiMusicSearchEnabled(getContext());
+      mAiModeButton.setImageResource(
+          themedIconsEnabled
+              ? (musicSearch ? R.drawable.ic_music_themed : R.drawable.ic_ai_mode_themed)
+              : (musicSearch ? R.drawable.ic_music_color : R.drawable.ic_ai_mode_color));
+      mAiModeButton.setContentDescription(getContext().getString(
+          musicSearch
+              ? R.string.qsb_music_content_description
+              : R.string.qsb_ai_content_description));
+    }
     boolean lensAvailable = googleSearchAvailable && isLensAvailable();
-    mLensIcon.setVisibility(lensAvailable ? View.VISIBLE : View.GONE);
+    if (mLensIcon != null) mLensIcon.setVisibility(lensAvailable ? View.VISIBLE : View.GONE);
 
     if (googleSearchAvailable) {
-      mMicIcon.setImageResource(
+      if (mMicIcon != null) mMicIcon.setImageResource(
           themedIconsEnabled ? R.drawable.ic_mic_themed : R.drawable.ic_mic_color);
-      mLensIcon.setImageResource(
+      if (mLensIcon != null) mLensIcon.setImageResource(
           themedIconsEnabled ? R.drawable.ic_lens_themed : R.drawable.ic_lens_color);
-      mAiModeButton.setImageResource(
-          themedIconsEnabled ? R.drawable.ic_ai_mode_themed : R.drawable.ic_ai_mode_color);
     }
   }
 
@@ -140,6 +163,18 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
   }
 
   private void launchAiSearch() {
+    if (Utilities.isAiMusicSearchEnabled(getContext())) {
+      String[] actions = {
+        "com.google.android.googlequicksearchbox.MUSIC_SEARCH",
+        Intent.ACTION_VOICE_COMMAND,
+      };
+      for (String action : actions) {
+        if (launchSafely(new Intent(action).setPackage(GSA_PACKAGE))) return;
+      }
+      launchSearch();
+      return;
+    }
+
     String[] actions = {
       "com.google.android.PIXEL_SEARCH",
       Intent.ACTION_ASSIST,
