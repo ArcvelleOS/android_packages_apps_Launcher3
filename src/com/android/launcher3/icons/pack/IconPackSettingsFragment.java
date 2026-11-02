@@ -46,6 +46,7 @@ import java.util.Set;
 
 public final class IconPackSettingsFragment extends RadioSettingsFragment {
     private static final IntentFilter PKG_UPDATE_INTENT = new IntentFilter();
+    private static final String BUILTIN_STYLE_KEY = "pref_builtin_icon_style";
     private PreferenceCategory mInstalledPacksCategory;
 
     private static final String[] ICON_INTENT_ACTIONS = new String[] {
@@ -89,7 +90,7 @@ public final class IconPackSettingsFragment extends RadioSettingsFragment {
         screen.addPreference(category);
 
         Preference style = new Preference(context);
-        style.setKey("pref_builtin_icon_style");
+        style.setKey(BUILTIN_STYLE_KEY);
         style.setTitle(R.string.icon_style_title);
         updateStyleSummary(context, style);
         style.setOnPreferenceClickListener(preference -> {
@@ -126,6 +127,8 @@ public final class IconPackSettingsFragment extends RadioSettingsFragment {
     @Override
     public void onResume() {
         super.onResume();
+        Preference style = findPreference(BUILTIN_STYLE_KEY);
+        if (style != null) updateStyleSummary(requireContext(), style);
         reloadPreferences();
         getActivity().registerReceiver(
                 broadCastReceiver, PKG_UPDATE_INTENT, Context.RECEIVER_NOT_EXPORTED);
