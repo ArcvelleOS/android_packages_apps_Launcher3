@@ -75,7 +75,7 @@ public class SurfaceTransactionApplier extends SurfaceReleaseCheck {
         mTargetViewRootImpl = view.getViewRootImpl();
         mBarrierSurfaceControl =
                 mTargetViewRootImpl != null ? mTargetViewRootImpl.getSurfaceControl() : null;
-        mInitialized = true;
+        mInitialized = mTargetViewRootImpl != null;
     }
 
     protected boolean onApplyMessage(Message msg) {

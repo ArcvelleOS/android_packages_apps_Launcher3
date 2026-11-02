@@ -282,7 +282,8 @@ public final class LauncherActivityInterface extends
         if (launcher == null) {
             return;
         }
-        ((RecentsView) launcher.getOverviewPanel()).reapplyActiveRotation();
+        RecentsView recentsView = launcher.getOverviewPanel();
+        if (recentsView != null) recentsView.reapplyActiveRotation();
     }
 
     @Override
