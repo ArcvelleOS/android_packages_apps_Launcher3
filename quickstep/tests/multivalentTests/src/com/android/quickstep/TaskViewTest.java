@@ -19,6 +19,7 @@ package com.android.quickstep;
 import static com.android.quickstep.TaskViewTestDIHelpers.mockRecentsModel;
 
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -62,6 +63,21 @@ public class TaskViewTest {
         mApp.initDaggerComponent(
                 DaggerTaskViewTestComponent.builder().bindRecentsModel(mockRecentsModel()));
         mTaskView = new TaskView(mApp, null, 0, 0, mFocusAnimator, mHoverAnimator);
+    }
+
+    @Test
+    public void overviewScrollScalePreservesDismissAndAnimateToIconScales() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            mTaskView.setOverviewScrollScale(0.9f);
+            TaskView.DISMISS_SCALE.setValue(mTaskView, 0.8f);
+            mTaskView.setAnimateToIconScale(0.5f);
+            assertEquals(0.36f, mTaskView.getScaleX(), 0.0001f);
+            assertEquals(0.36f, mTaskView.getScaleY(), 0.0001f);
+
+            // Leaving the phone carousel must retain the other active animation factors.
+            mTaskView.setOverviewScrollScale(1f);
+            assertEquals(0.4f, mTaskView.getScaleX(), 0.0001f);
+        });
     }
 
     @Test

@@ -5757,9 +5757,20 @@ public abstract class RecentsView<
     }
 
     protected void doScrollScale() {
-        if (mPageScrolls == null || showAsGrid()
-                || mContainer.getDeviceProfile().getDeviceProperties().isLargeScreen())
+        if (mPageScrolls == null) return;
+        if (showAsGrid() || mContainer.getDeviceProfile().getDeviceProperties().isLargeScreen()) {
+            for (int i = 0; i < getChildCount(); i++) {
+                if (getChildAt(i) instanceof TaskView taskView) {
+                    taskView.setOverviewScrollScale(1f);
+                }
+            }
+            if (mRemoteTargetHandles != null) {
+                for (RemoteTargetHandle handle : mRemoteTargetHandles) {
+                    handle.getTaskViewSimulator().scrollScale.value = 1f;
+                }
+            }
             return;
+        }
 
         //nick@lmo-20231004 if rotating launcher is enabled, rotation works differently
         // There are many edge cases (going from landscape app to recents, rotating in recents etc)
@@ -5782,16 +5793,15 @@ public abstract class RecentsView<
                         taskView.getPrimaryDismissTranslationProperty().get(taskView));
             }
             int scrollDelta = Math.abs(curScroll - childPosition);
-            float oldScale = child.getScaleX();
-            float newScale = scrollDelta > scaleArea
+            float newScale = scaleArea <= 0 ? 1f : (scrollDelta > scaleArea
                     ? mScrollScale
-                    : mapToRange(scrollDelta, 0, scaleArea, 1f, mScrollScale, LINEAR);
-            if (oldScale != newScale) {
+                    : mapToRange(scrollDelta, 0, scaleArea, 1f, mScrollScale, LINEAR));
+            if (child instanceof TaskView taskView) {
+                // Compose with dismiss, modal, grid and animate-to-icon scales in TaskView.
+                taskView.setOverviewScrollScale(newScale);
+            } else if (child.getScaleX() != newScale || child.getScaleY() != newScale) {
                 child.setScaleX(newScale);
                 child.setScaleY(newScale);
-                if (child instanceof TaskView) {
-                    ((TaskView) child).updateFullscreenParams();
-                }
             }
             if (!(child instanceof TaskView && mRemoteTargetHandles != null)) continue;
             TaskView tv = (TaskView) child;
@@ -5801,10 +5811,7 @@ public abstract class RecentsView<
                 for (int id : tv.getTaskIds()) {
                     if (targets != null && targets.findTask(id) != null) {
                         rth.getTaskViewSimulator().scrollScale.value =
-                                getPagedOrientationHandler().getPrimaryValue(
-                                    tv.getScaleX(),
-                                    tv.getScaleY()
-                                );
+                                tv.getOverviewScrollScale();
                     }
                 }
             }
@@ -5824,10 +5831,7 @@ public abstract class RecentsView<
             RemoteAnimationTargets targets = params.getTargetSet();
             for (int id : tv.getTaskIds()) {
                 if (targets != null && targets.findTask(id) != null) {
-                    return getPagedOrientationHandler().getPrimaryValue(
-                                tv.getScaleX(),
-                                tv.getScaleY()
-                           );
+                    return tv.getOverviewScrollScale();
                 }
             }
         }

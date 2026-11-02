@@ -384,6 +384,13 @@ constructor(
             applyScale()
         }
 
+    var overviewScrollScale = 1f
+        set(value) {
+            if (field == value) return
+            field = value
+            applyScale()
+        }
+
     var modalScale = 1f
         set(value) {
             field = value
@@ -1087,9 +1094,8 @@ constructor(
                 viewModel.bind(type, *taskIds)
             }
 
-            // A freshly inflated TaskView has currentCornerRadius == 0 until the params are
-            // computed once; on phones applyScale() is a no-op, so nothing else does it and the
-            // card would be drawn with square corners. Compute them before binding the containers.
+            // Initialize corner radius before binding the containers, including on a freshly
+            // inflated view which has not received any scale update yet.
             updateFullscreenParams(thumbnailFullscreenParams)
             taskContainers.forEach { container ->
                 container.bind()
@@ -1777,12 +1783,9 @@ constructor(
     fun getSizeAdjustment(fullscreenEnabled: Boolean) = if (fullscreenEnabled) nonGridScale else 1f
 
     private fun applyScale() {
-        /* This is now only for grid mode on tablets. Unconditionally calling this breaks
-         * our overview scrolling animation. Block this method, otherwise we have to
-         * introduce a multivalue scale fusion class to handle this. */
-        if (!container.deviceProfile.deviceProperties.isLargeScreen) return
         val scale =
             persistentScale *
+                overviewScrollScale *
                 dismissScale *
                 animateToIconScale *
                 Utilities.mapRange(modalness, 1f, modalScale)
@@ -1887,6 +1890,7 @@ constructor(
             splitSelectTranslationY = 0f
         }
         dismissScale = 1f
+        overviewScrollScale = 1f
         translationZ = 0f
         setIconVisibleForGesture(true)
         settledProgressDismiss = 1f
