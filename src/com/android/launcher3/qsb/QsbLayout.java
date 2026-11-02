@@ -154,10 +154,10 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
 
   private void launchLens() {
     Intent[] candidates = {
-      new Intent().setComponent(new ComponentName(GSA_PACKAGE, LENS_ACTIVITY)),
-      new Intent()
-          .setComponent(
-              new ComponentName(GSA_PACKAGE, "com.google.android.apps.lens.MainActivity")),
+      new Intent(Intent.ACTION_MAIN)
+          .setComponent(new ComponentName(GSA_PACKAGE, LENS_ACTIVITY))
+          .putExtra("LensHomescreenShortcut", true)
+          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK),
       new Intent(Intent.ACTION_VIEW, Uri.parse(LENS_URI)).setPackage(GSA_PACKAGE),
     };
     for (Intent candidate : candidates) {
@@ -171,7 +171,10 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
   }
 
   private boolean launchSafely(Intent intent) {
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    if ((intent.getFlags() & Intent.FLAG_ACTIVITY_CLEAR_TASK) == 0) {
+      intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+    }
     if (!resolve(intent)) return false;
     try {
       getContext().startActivity(intent);
