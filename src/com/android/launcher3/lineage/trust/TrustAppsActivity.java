@@ -62,6 +62,7 @@ public class TrustAppsActivity extends CollapsingToolbarBaseActivity implements
     private TrustDatabaseHelper mDbHelper;
     private TrustAppsAdapter mAdapter;
     private String mUpdatedPackageName;
+    private LoadTrustComponentsTask mLoadTask;
 
     private final PackageMonitor mPackageMonitor = new PackageMonitor() {
         @Override
@@ -151,11 +152,13 @@ public class TrustAppsActivity extends CollapsingToolbarBaseActivity implements
 
     @Override
     public void onLoadListProgress(int progress) {
+        if (isFinishing() || isDestroyed()) return;
         mProgressBar.setProgress(progress);
     }
 
     @Override
     public void onLoadCompleted(List<TrustComponent> result) {
+        if (isFinishing() || isDestroyed()) return;
         mLoadingView.setVisibility(View.GONE);
         mRecyclerView.setVisibility(View.VISIBLE);
         mAdapter.update(result);
@@ -176,7 +179,15 @@ public class TrustAppsActivity extends CollapsingToolbarBaseActivity implements
     }
 
     private void loadComponents() {
-        new LoadTrustComponentsTask(mDbHelper, getPackageManager(), this).execute();
+        if (mLoadTask != null) mLoadTask.cancel(true);
+        mLoadTask = new LoadTrustComponentsTask(mDbHelper, getPackageManager(), this);
+        mLoadTask.execute();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mLoadTask != null) mLoadTask.cancel(true);
+        super.onDestroy();
     }
 
     private void showOnBoarding(boolean forceShow) {

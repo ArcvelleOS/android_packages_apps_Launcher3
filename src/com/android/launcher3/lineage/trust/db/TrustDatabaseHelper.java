@@ -93,8 +93,8 @@ public class TrustDatabaseHelper extends SQLiteOpenHelper {
             values.put(KEY_HIDDEN, 1);
 
             int rows = db.update(TABLE_NAME, values, KEY_PKGNAME + " = ?",
-                    new String[]{KEY_PKGNAME});
-            if (rows != 1) {
+                    new String[]{packageName});
+            if (rows == 0) {
                 // Entry doesn't exist, create a new one
                 db.insertOrThrow(TABLE_NAME, null, values);
             }
@@ -147,21 +147,11 @@ public class TrustDatabaseHelper extends SQLiteOpenHelper {
     }
 
     public int getTotalPackageHidden() {
-        String query = String.format("SELECT * FROM %s WHERE %s = ?", TABLE_NAME, KEY_HIDDEN);
-        SQLiteDatabase db = getReadableDatabase();
-        Cursor cursor = db.rawQuery(query, new String[]{ });
-        int result = 0;
-        try {
-            result = cursor.getCount();
-        } catch (Exception e) {
-            // Ignored
-        } finally {
-            if (cursor != null && !cursor.isClosed()) {
-                cursor.close();
-            }
+        String query = "SELECT COUNT(DISTINCT " + KEY_PKGNAME + ") FROM " + TABLE_NAME
+                + " WHERE " + KEY_HIDDEN + " = ?";
+        try (Cursor cursor = getReadableDatabase().rawQuery(query, new String[]{"1"})) {
+            return cursor.moveToFirst() ? cursor.getInt(0) : 0;
         }
-
-        return result;
     }
 
 }

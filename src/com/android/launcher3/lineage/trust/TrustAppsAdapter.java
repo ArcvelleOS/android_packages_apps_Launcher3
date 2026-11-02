@@ -105,18 +105,23 @@ class TrustAppsAdapter extends RecyclerView.Adapter<TrustAppsAdapter.ViewHolder>
                         R.drawable.avd_hidden_lock : R.drawable.avd_hidden_unlock);
                 AnimatedVectorDrawable avd = (AnimatedVectorDrawable) mHiddenView.getDrawable();
 
-                int position = getAdapterPosition();
+                // Persist the click immediately; a recycled/cancelled animation must not lose it.
+                mListener.onHiddenItemChanged(component);
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
                     avd.registerAnimationCallback(new Animatable2.AnimationCallback() {
                         @Override
                         public void onAnimationEnd(Drawable drawable) {
-                            updateHiddenList(position, component);
+                            if (mHiddenView.getDrawable() != avd) return;
+                            int position = getBindingAdapterPosition();
+                            if (position != RecyclerView.NO_POSITION
+                                    && mList.get(position) == component) {
+                                notifyItemChanged(position);
+                            }
                         }
                     });
                     avd.start();
                 } else {
                     avd.start();
-                    updateHiddenList(position, component);
                 }
             });
 
@@ -126,15 +131,6 @@ class TrustAppsAdapter extends RecyclerView.Adapter<TrustAppsAdapter.ViewHolder>
             });
         }
 
-        private void updateHiddenList(int position, TrustComponent component) {
-            mListener.onHiddenItemChanged(component);
-            updateList(position, component);
-        }
-
-        private void updateList(int position, TrustComponent component) {
-            mList.set(position, component);
-            notifyItemChanged(position);
-        }
     }
 
     private static class Callback extends DiffUtil.Callback {

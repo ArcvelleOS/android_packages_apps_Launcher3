@@ -30,7 +30,9 @@ import com.android.launcher3.lineage.trust.db.TrustDatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class LoadTrustComponentsTask extends AsyncTask<Void, Integer, List<TrustComponent>> {
     @NonNull
@@ -53,6 +55,7 @@ public class LoadTrustComponentsTask extends AsyncTask<Void, Integer, List<Trust
     @Override
     protected List<TrustComponent> doInBackground(Void... voids) {
         List<TrustComponent> list = new ArrayList<>();
+        Set<String> seenPackages = new HashSet<>();
 
         Intent filter = new Intent(Intent.ACTION_MAIN, null);
         filter.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -65,6 +68,7 @@ public class LoadTrustComponentsTask extends AsyncTask<Void, Integer, List<Trust
             ResolveInfo app = apps.get(i);
             try {
                 String pkgName = app.activityInfo.packageName;
+                if (!seenPackages.add(pkgName)) continue;
                 ApplicationInfo applicationInfo;
                 boolean isAppLockSupported = false;
                 boolean isAppLockEnabled = false;
