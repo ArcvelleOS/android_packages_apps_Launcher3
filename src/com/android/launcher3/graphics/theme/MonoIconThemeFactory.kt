@@ -69,7 +69,7 @@ object MonoIconThemeFactory : IconThemeFactory {
         val night = (res.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
         val bg = res.getColor(if (night) android.R.color.system_neutral1_900
-            else android.R.color.system_neutral1_100, context.theme)
+            else android.R.color.system_neutral1_50, context.theme)
         val fg = res.getColor(if (night) android.R.color.system_neutral1_50
             else android.R.color.system_neutral1_900, context.theme)
         return ColorList(bg, fg, bg, bg, fg)
