@@ -47,9 +47,12 @@ public abstract class RadioSettingsFragment extends SettingsBasePreferenceFragme
             screen.addPreference(headerPref);
         }
 
+        addAdditionalPreferences(context, screen);
         loadPreferences(context, screen);
         setPreferenceScreen(screen);
     }
+
+    protected void addAdditionalPreferences(Context context, PreferenceScreen screen) {}
 
     @Override
     public boolean onPreferenceClick(Preference preference) {

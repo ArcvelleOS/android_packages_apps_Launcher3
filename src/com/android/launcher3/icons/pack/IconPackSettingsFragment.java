@@ -17,6 +17,7 @@
 
 package com.android.launcher3.icons.pack;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -25,7 +26,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
+import androidx.preference.PreferenceScreen;
 
+import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.R;
 
 import com.android.launcher3.customization.IconDatabase;
@@ -74,6 +78,38 @@ public final class IconPackSettingsFragment extends RadioSettingsFragment {
             reloadPreferences();
         }
     };
+
+    @Override
+    protected void addAdditionalPreferences(Context context, PreferenceScreen screen) {
+        PreferenceCategory category = new PreferenceCategory(context);
+        category.setTitle(R.string.icon_style_category);
+        screen.addPreference(category);
+
+        Preference style = new Preference(context);
+        style.setKey("pref_builtin_icon_style");
+        style.setTitle(R.string.icon_style_title);
+        updateStyleSummary(context, style);
+        style.setOnPreferenceClickListener(preference -> {
+            boolean isNothingStyle = LauncherPrefs.NOTHING_STYLE_ICONS.get(context);
+            new AlertDialog.Builder(context)
+                    .setTitle(R.string.icon_style_title)
+                    .setSingleChoiceItems(R.array.icon_style_entries,
+                            isNothingStyle ? 1 : 0, (dialog, which) -> {
+                                LauncherPrefs.get(context).put(
+                                        LauncherPrefs.NOTHING_STYLE_ICONS, which == 1);
+                                updateStyleSummary(context, style);
+                                dialog.dismiss();
+                            })
+                    .show();
+            return true;
+        });
+        category.addPreference(style);
+    }
+
+    private static void updateStyleSummary(Context context, Preference preference) {
+        preference.setSummary(LauncherPrefs.NOTHING_STYLE_ICONS.get(context)
+                ? R.string.nothing_style_icons_title : R.string.icon_style_default);
+    }
 
     @Override
     public void onResume() {

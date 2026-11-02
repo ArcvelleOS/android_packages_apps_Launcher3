@@ -7,6 +7,12 @@
     <string name="misc_appearance_title">Appearance</string>
     <string name="misc_motion_title">Motion</string>
     <string name="misc_recents_title">Recent apps</string>
-    <string name="nothing_style_icons_title">Nothing-style icons</string>
-    <string name="nothing_style_icons_summary">Neutral monochrome icons with smaller centered symbols. Custom icon pack artwork is preserved.</string>
+    <string name="icon_style_category">Built-in icon style</string>
+    <string name="icon_style_title">Icon style</string>
+    <string name="icon_style_default">Default</string>
+    <string name="nothing_style_icons_title">Nothing-style</string>
+    <string-array name="icon_style_entries">
+        <item>@string/icon_style_default</item>
+        <item>@string/nothing_style_icons_title</item>
+    </string-array>
 </resources>
