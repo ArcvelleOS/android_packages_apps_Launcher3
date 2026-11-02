@@ -85,15 +85,14 @@ class ResizeManager(
             else widgetView.appWidgetInfo as? LauncherAppWidgetProviderInfo
 
         val resizeMode = widgetProviderInfo?.resizeMode ?: 0
-        val idp = cellLayout.context.appComponent.idp
         resizeConstraints =
             ResizeConstraints(
                 minHSpan = widgetProviderInfo?.minSpanX ?: itemInfo.spanX,
                 minVSpan = widgetProviderInfo?.minSpanY ?: itemInfo.spanY,
                 maxHSpan = widgetProviderInfo?.maxSpanX ?: itemInfo.spanX,
                 maxVSpan = widgetProviderInfo?.maxSpanY ?: itemInfo.spanY,
-                cellCountX = idp.numRows,
-                cellCountY = idp.numColumns,
+                cellCountX = cellLayout.countX,
+                cellCountY = cellLayout.countY,
                 horizontalResizeModeEnabled =
                     resizeMode and AppWidgetProviderInfo.RESIZE_HORIZONTAL != 0,
                 verticalResizeModeEnabled =
