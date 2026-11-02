@@ -120,8 +120,10 @@ public final class IconPackSettingsFragment extends RadioSettingsFragment {
     }
 
     private static void updateStyleSummary(Context context, Preference preference) {
-        preference.setSummary(LauncherPrefs.NOTHING_STYLE_ICONS.get(context)
-                ? R.string.nothing_style_icons_title : R.string.icon_style_default);
+        boolean nothingStyle = LauncherPrefs.NOTHING_STYLE_ICONS.get(context);
+        preference.setSummary(nothingStyle && !LauncherPrefs.ALLAPPS_THEMED_ICONS.get(context)
+                ? R.string.nothing_style_home_only_summary
+                : nothingStyle ? R.string.nothing_style_icons_title : R.string.icon_style_default);
     }
 
     @Override

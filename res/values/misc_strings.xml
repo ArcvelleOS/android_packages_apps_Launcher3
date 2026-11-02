@@ -12,6 +12,7 @@
     <string name="icon_pack_installed_category">Installed icon packs</string>
     <string name="icon_style_default">Default</string>
     <string name="nothing_style_icons_title">Nothing-style</string>
+    <string name="nothing_style_home_only_summary">Nothing-style · App drawer theming is off</string>
     <string-array name="icon_style_entries">
         <item>@string/icon_style_default</item>
         <item>@string/nothing_style_icons_title</item>
