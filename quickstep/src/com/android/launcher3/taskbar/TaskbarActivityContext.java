@@ -40,6 +40,7 @@ import static com.android.launcher3.taskbar.TaskbarAutohideSuspendController.FLA
 import static com.android.launcher3.taskbar.TaskbarStashController.FLAG_IN_SECONDARY_LAUNCHER_ON_CD;
 import static com.android.launcher3.taskbar.TaskbarStashController.FLAG_STASHED_IN_APP_AUTO;
 import static com.android.launcher3.taskbar.TaskbarStashController.SHOULD_BUBBLES_FOLLOW_DEFAULT_VALUE;
+import static com.android.launcher3.testing.shared.ResourceUtils.getBoolByName;
 import static com.android.launcher3.util.Executors.MAIN_EXECUTOR;
 import static com.android.launcher3.util.Executors.UI_HELPER_EXECUTOR;
 import static com.android.launcher3.util.Executors.getTaskbarUiThread;
@@ -354,8 +355,7 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
         mIsUserSetupComplete = settingsCache.getValue(URI_USER_SETUP_COMPLETE);
         mIsNavBarKidsMode = settingsCache.getValue(URI_NAV_BAR_KIDS_MODE);
         mIsNavbarHintEnabled = settingsCache.getValue(URI_NAVIGATION_BAR_HINT);
-        mImeDrawsImeNavBar = Settings.Secure.getInt(
-                getContentResolver(), URI_NAV_BAR_IME.getLastPathSegment(), 1) != 0;
+        mImeDrawsImeNavBar = shouldImeDrawNavBar();
         mBubbleFeatureConfig =
                 new BubbleFeatureConfigImpl(mWindowContext, getDesktopState(mWindowContext));
 
@@ -615,14 +615,20 @@ public class TaskbarActivityContext extends BaseTaskbarContext {
         mBubbleFeatureConfig = featureConfig;
     }
 
+    private boolean shouldImeDrawNavBar() {
+        return isPrimaryDisplay()
+                && getBoolByName("config_imeDrawsImeNavBar", getResources(), false)
+                && Settings.Secure.getInt(getContentResolver(),
+                        URI_NAV_BAR_IME.getLastPathSegment(), 1) != 0;
+    }
+
     /**
      * Init of taskbar activity context.
      * @param duration If duration is greater than 0, it will be used to create an animation
  *                     for the taskbar create/recreate process.
      */
     public void init(@NonNull TaskbarSharedState sharedState, boolean userUnlocked, int duration) {
-        mImeDrawsImeNavBar = Settings.Secure.getInt(
-                getContentResolver(), URI_NAV_BAR_IME.getLastPathSegment(), 1) != 0;
+        mImeDrawsImeNavBar = shouldImeDrawNavBar();
         mLastRequestedNonFullscreenSize = getDefaultTaskbarWindowSize();
         mWindowLayoutParams = createAllWindowParams();
         mLastUpdatedLayoutParams = new WindowManager.LayoutParams();
