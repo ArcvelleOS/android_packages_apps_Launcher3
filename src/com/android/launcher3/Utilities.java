@@ -988,4 +988,8 @@ public final class Utilities {
     public static boolean isAiMusicSearchEnabled(Context context) {
         return LauncherPrefs.get(context).get(LauncherPrefs.DOCK_AI_MUSIC_SEARCH);
     }
+
+    public static int getQsbOuterOpacity(Context context) {
+        return LauncherPrefs.get(context).get(LauncherPrefs.QSB_OUTER_OPACITY);
+    }
 }

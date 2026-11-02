@@ -65,6 +65,18 @@
             android:defaultValue="false"
             android:persistent="true" />
 
+        <co.aospa.framework.preference.CustomSeekBarPreference
+            android:key="pref_qsb_outer_opacity"
+            android:title="@string/qsb_outer_opacity_title"
+            android:summary="@string/qsb_outer_opacity_summary"
+            android:dependency="pref_show_hotseat_qsb"
+            android:persistent="true"
+            android:max="100"
+            android:defaultValue="70"
+            launcher:min="0"
+            launcher:interval="5"
+            launcher:units="%" />
+
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="pref_enable_minus_one"

@@ -53,6 +53,8 @@
     <string name="pref_show_hotseat_qsb_summary">At the bottom of your home screen</string>
     <string name="dock_ai_music_search_title">Music search</string>
     <string name="dock_ai_music_search_summary">Start music search when pressing the AI mode button</string>
+    <string name="qsb_outer_opacity_title">Search bar outer opacity</string>
+    <string name="qsb_outer_opacity_summary">Adjust the opacity of the search bar outer shape</string>
 
     <!-- Open keyboard -->
     <string name="drawer_open_keyboard_title">Swipe up to start search</string>

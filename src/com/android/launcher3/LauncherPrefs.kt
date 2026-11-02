@@ -392,6 +392,8 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
 
         @JvmField val DOCK_AI_MUSIC_SEARCH = backedUpItem("pref_dock_ai_music_search", false)
 
+        @JvmField val QSB_OUTER_OPACITY = backedUpItem("pref_qsb_outer_opacity", 70)
+
         @JvmStatic
         fun isHotseatQsbEnabled(context: Context): Boolean {
             return try {
