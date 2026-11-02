@@ -46,7 +46,11 @@ final class SmartspaceSettings implements SharedPreferences.OnSharedPreferenceCh
     }
 
     void refresh() {
-        if (mEvents != null) mEvents.setEnabled(LauncherPrefs.SHOW_SMARTSPACE.get(context()));
+        if (mEvents == null) return;
+        boolean enabled = LauncherPrefs.SHOW_SMARTSPACE.get(context());
+        mEvents.setEnabled(enabled);
+        mEvents.setSummary(enabled
+                ? R.string.smartspace_events_summary : R.string.smartspace_events_disabled_summary);
     }
 
     void start() {
