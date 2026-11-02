@@ -27,6 +27,7 @@ import android.content.pm.ResolveInfo;
 
 import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
+import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceScreen;
 
 import com.android.launcher3.LauncherPrefs;
@@ -37,6 +38,7 @@ import com.android.launcher3.util.AppReloader;
 
 import com.android.settingslib.widget.SelectorWithWidgetPreference;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,6 +46,7 @@ import java.util.Set;
 
 public final class IconPackSettingsFragment extends RadioSettingsFragment {
     private static final IntentFilter PKG_UPDATE_INTENT = new IntentFilter();
+    private PreferenceCategory mInstalledPacksCategory;
 
     private static final String[] ICON_INTENT_ACTIONS = new String[] {
             "com.fede.launcher.THEME_ICONPACK",
@@ -104,6 +107,15 @@ public final class IconPackSettingsFragment extends RadioSettingsFragment {
             return true;
         });
         category.addPreference(style);
+
+        mInstalledPacksCategory = new PreferenceCategory(context);
+        mInstalledPacksCategory.setTitle(R.string.icon_pack_installed_category);
+        screen.addPreference(mInstalledPacksCategory);
+    }
+
+    @Override
+    protected PreferenceGroup getRadioPreferenceGroup(Context context, PreferenceScreen screen) {
+        return mInstalledPacksCategory == null ? screen : mInstalledPacksCategory;
     }
 
     private static void updateStyleSummary(Context context, Preference preference) {
@@ -172,6 +184,16 @@ public final class IconPackSettingsFragment extends RadioSettingsFragment {
             availablePacks.add(new IconPackInfo(
                     r.activityInfo.packageName, r.loadLabel(pm).toString()));
         }
+
+        // Keep the built-in choice first, then present installed packs predictably by label.
+        final List<IconPackInfo> sortedPacks = new ArrayList<>(availablePacks);
+        final Collator collator = Collator.getInstance();
+        sortedPacks.subList(1, sortedPacks.size()).sort((left, right) -> {
+            int labelOrder = collator.compare(left.label, right.label);
+            return labelOrder != 0 ? labelOrder : left.pkgName.compareTo(right.pkgName);
+        });
+        availablePacks.clear();
+        availablePacks.addAll(sortedPacks);
         return availablePacks;
     }
 

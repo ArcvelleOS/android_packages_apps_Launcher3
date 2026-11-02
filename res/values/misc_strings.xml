@@ -7,8 +7,9 @@
     <string name="misc_appearance_title">Appearance</string>
     <string name="misc_motion_title">Motion</string>
     <string name="misc_recents_title">Recent apps</string>
-    <string name="icon_style_category">Built-in icon style</string>
-    <string name="icon_style_title">Icon style</string>
+    <string name="icon_style_category">Launcher icon appearance</string>
+    <string name="icon_style_title">Built-in icon style</string>
+    <string name="icon_pack_installed_category">Installed icon packs</string>
     <string name="icon_style_default">Default</string>
     <string name="nothing_style_icons_title">Nothing-style</string>
     <string-array name="icon_style_entries">

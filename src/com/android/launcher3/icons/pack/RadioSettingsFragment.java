@@ -21,6 +21,7 @@ import android.content.Context;
 import android.os.Bundle;
 
 import androidx.preference.Preference;
+import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
 
@@ -35,6 +36,10 @@ public abstract class RadioSettingsFragment extends SettingsBasePreferenceFragme
     private RadioHeaderPreference headerPref = null;
 
     protected abstract List<SelectorWithWidgetPreference> getPreferences(Context context);
+
+    protected PreferenceGroup getRadioPreferenceGroup(Context context, PreferenceScreen screen) {
+        return screen;
+    }
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -89,24 +94,27 @@ public abstract class RadioSettingsFragment extends SettingsBasePreferenceFragme
             return;
         }
 
-        // Remove radio preferences (backwards so we don't mess up indices)
-        final int numPreferences = screen.getPreferenceCount();
+        // Remove radio preferences from their display group (backwards so we don't mess up
+        // indices). Subclasses can group the dynamic rows inside a category.
+        final Context context = getPreferenceManager().getContext();
+        final PreferenceGroup group = getRadioPreferenceGroup(context, screen);
+        final int numPreferences = group.getPreferenceCount();
         for (int i = numPreferences - 1; i >= 0; i--) {
-            final Preference p = screen.getPreference(i);
+            final Preference p = group.getPreference(i);
             if (p instanceof SelectorWithWidgetPreference) {
-                screen.removePreference(p);
+                group.removePreference(p);
             }
         }
 
         // Add radio preferences
         final PreferenceManager prefManager = getPreferenceManager();
-        final Context context = prefManager.getContext();
         loadPreferences(context, screen);
     }
 
     private void loadPreferences(Context context, PreferenceScreen screen) {
         selectedPreference = null;
         final List<SelectorWithWidgetPreference> prefs = getPreferences(context);
+        final PreferenceGroup group = getRadioPreferenceGroup(context, screen);
         for (final SelectorWithWidgetPreference p : prefs) {
             // The persisted selection supplied by getPreferences is the source of truth.
             if (p.isChecked()) {
@@ -117,7 +125,7 @@ public abstract class RadioSettingsFragment extends SettingsBasePreferenceFragme
                 }
             }
             p.setOnPreferenceClickListener(this);
-            screen.addPreference(p);
+            group.addPreference(p);
         }
 
         if (selectedPreference == null && !prefs.isEmpty()) {
