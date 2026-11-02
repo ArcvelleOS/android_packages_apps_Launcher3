@@ -72,7 +72,7 @@ public class OverviewToHomeAnim {
         boolean playWorkspaceRevealAnim = velocity < 0;
         if (playWorkspaceRevealAnim) {
             WorkspaceRevealAnim workspaceRevealAnim = new WorkspaceRevealAnim(mLauncher,
-                    false /* animateOverviewScrim */);
+                    false /* animateOverviewScrim */, true /* allowRenderThread */);
             workspaceRevealAnim.addAnimatorListener(new AnimationSuccessListener() {
                 @Override
                 public void onAnimationSuccess(Animator animator) {

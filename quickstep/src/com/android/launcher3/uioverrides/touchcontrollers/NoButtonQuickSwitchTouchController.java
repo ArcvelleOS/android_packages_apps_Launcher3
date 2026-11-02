@@ -439,7 +439,8 @@ public class NoButtonQuickSwitchTouchController implements TouchController,
             nonOverviewAnim = mNonOverviewAnim.getAnimationPlayer();
             mNonOverviewAnim.dispatchOnStart();
 
-            new WorkspaceRevealAnim(mLauncher, false /* animateOverviewScrim */).start();
+            new WorkspaceRevealAnim(mLauncher, false /* animateOverviewScrim */,
+                    true /* allowRenderThread */).start();
         } else {
             boolean canceled = targetState == NORMAL;
             if (canceled) {

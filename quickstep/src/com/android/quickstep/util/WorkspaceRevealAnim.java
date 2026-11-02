@@ -31,9 +31,11 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.util.FloatProperty;
 import android.util.Log;
+import android.view.RenderNodeAnimator;
 import android.view.View;
 
 import com.android.app.animation.Interpolators;
+import com.android.internal.penguin.luminous.Luminous;
 import com.android.launcher3.Hotseat;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
@@ -66,6 +68,15 @@ public class WorkspaceRevealAnim {
     private final AnimatorSet mAnimators = new AnimatorSet();
 
     public WorkspaceRevealAnim(Launcher launcher, boolean animateOverviewScrim) {
+        this(launcher, animateOverviewScrim, false /* allowRenderThread */);
+    }
+
+    /**
+     * @param allowRenderThread whether this reveal plays forward without seeking. Remote
+     *                         transitions must retain seekable UI-thread animators.
+     */
+    public WorkspaceRevealAnim(Launcher launcher, boolean animateOverviewScrim,
+            boolean allowRenderThread) {
         prepareToAnimate(launcher, animateOverviewScrim);
 
         ResourceProvider rp = DynamicResource.provider(launcher);
@@ -75,8 +86,8 @@ public class WorkspaceRevealAnim {
         workspace.setPivotToScaleWithSelf(launcher.getHotseat());
 
         // Add reveal animations.
-        addRevealAnimatorsForView(workspace, WORKSPACE_SCALE_PROPERTY);
-        addRevealAnimatorsForView(launcher.getHotseat(), HOTSEAT_SCALE_PROPERTY);
+        addRevealAnimatorsForView(workspace, WORKSPACE_SCALE_PROPERTY, allowRenderThread);
+        addRevealAnimatorsForView(launcher.getHotseat(), HOTSEAT_SCALE_PROPERTY, allowRenderThread);
 
         // Add overview scrim animation.
         if (animateOverviewScrim) {
@@ -115,13 +126,25 @@ public class WorkspaceRevealAnim {
         });
     }
 
-    private <T extends View>  void addRevealAnimatorsForView(T v, FloatProperty<T> scaleProperty) {
+    private <T extends View> void addRevealAnimatorsForView(T v, FloatProperty<T> scaleProperty,
+            boolean allowRenderThread) {
         ObjectAnimator scale = ObjectAnimator.ofFloat(v, scaleProperty, mScaleStart, 1f);
         scale.setDuration(DURATION_MS);
         scale.setInterpolator(Interpolators.DECELERATED_EASE);
         mAnimators.play(scale);
 
-        ObjectAnimator alpha = ObjectAnimator.ofFloat(v, View.ALPHA, 0, 1f);
+        Animator alpha;
+        if (allowRenderThread && v.isAttachedToWindow() && v.isHardwareAccelerated()
+                && Luminous.offloadsViewAnimations(v)) {
+            // Only the independent fade can move off the UI thread. Scale still goes through
+            // MultiScalePropertyFactory so state transitions and icon geometry stay in sync.
+            RenderNodeAnimator renderAlpha = new RenderNodeAnimator(RenderNodeAnimator.ALPHA, 1f);
+            renderAlpha.setStartValue(0f);
+            renderAlpha.setTarget(v);
+            alpha = renderAlpha;
+        } else {
+            alpha = ObjectAnimator.ofFloat(v, View.ALPHA, 0, 1f);
+        }
         alpha.setDuration(DURATION_MS);
         alpha.setInterpolator(Interpolators.DECELERATED_EASE);
         mAnimators.play(alpha);
