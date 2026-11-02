@@ -7,7 +7,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.PowerManager;
 import android.os.UserManager;
-import android.util.AttributeSet;
 import android.widget.FrameLayout;
 
 import com.android.launcher3.Launcher;
@@ -24,14 +23,10 @@ public class AtAGlanceView extends FrameLayout implements
     private boolean mVisible;
     private boolean mNormalState;
 
-    public AtAGlanceView(Context context) {
-        this(context, null);
-    }
-
-    public AtAGlanceView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        mLauncher = Launcher.getLauncher(context);
-        mSmartspace = new SmartspaceView(context);
+    public AtAGlanceView(Launcher launcher) {
+        super(launcher);
+        mLauncher = launcher;
+        mSmartspace = new SmartspaceView(launcher);
         addView(mSmartspace, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
     }
 

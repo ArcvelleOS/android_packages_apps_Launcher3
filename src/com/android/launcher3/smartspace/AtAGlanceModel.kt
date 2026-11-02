@@ -6,6 +6,7 @@ package com.android.launcher3.smartspace
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.WorkerThread
+import com.android.launcher3.Launcher
 import com.android.launcher3.LauncherSettings.Favorites
 import com.android.launcher3.R
 import com.android.launcher3.WorkspaceLayoutManager.FIRST_SCREEN_ID
@@ -29,8 +30,11 @@ class AtAGlanceModel(columns: Int, row: Int) : ItemInfo(), ItemViewProvider {
 
     override fun getViewId() = R.id.launcher_smartspace
 
-    override fun inflateView(ctx: ActivityContext, parent: ViewGroup): View =
-        AtAGlanceView(ctx.asContext()).also { it.tag = this }
+    override fun inflateView(ctx: ActivityContext, parent: ViewGroup): View {
+        val view = (ctx as? Launcher)?.let(::AtAGlanceView) ?: View(ctx.asContext())
+        view.tag = this
+        return view
+    }
 
     companion object {
         const val NO_SPACE = -1
