@@ -156,6 +156,7 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         } else if (LauncherPrefs.SHOW_SMARTSPACE.getSharedPrefKey().equals(key)) {
             LauncherAppState.getInstance(this).getModel().forceReload("smartspace_changed");
         } else if (LauncherPrefs.NOTHING_STYLE_ICONS.getSharedPrefKey().equals(key)
+                || LauncherPrefs.ALLAPPS_THEMED_ICONS.getSharedPrefKey().equals(key)
                 || LauncherPrefs.COS_APP_ANIMATIONS.getSharedPrefKey().equals(key)) {
             // Rebind views whose themed-drawer behavior is determined at construction time.
             LauncherAppState.setNeedsRestart();
