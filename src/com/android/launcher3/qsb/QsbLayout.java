@@ -87,6 +87,7 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
     if (mThemeManager != null) mThemeManager.addChangeListener(mThemeChangeListener);
     LauncherPrefs.getPrefs(getContext()).registerOnSharedPreferenceChangeListener(this);
     updateIcons();
+    refreshOuterBackground();
   }
 
   @Override

@@ -59,7 +59,7 @@ public class QsbOuterDrawable extends Drawable {
         int padding = mContext.getResources().getDimensionPixelSize(R.dimen.qsb_icon_padding);
         int rightPadding =
                 mContext.getResources().getDimensionPixelSize(R.dimen.qsb_inner_inset_end);
-        Rect innerBounds = new Rect(
+        mRect.set(
                 bounds.left + padding,
                 bounds.top + padding,
                 bounds.right - rightPadding,
@@ -69,7 +69,7 @@ public class QsbOuterDrawable extends Drawable {
                         : android.R.color.system_neutral1_50)
                 : mContext.getColor(R.color.materialColorSurfaceBright);
         mPaint.setColor(innerColor);
-        canvas.drawRoundRect(new RectF(innerBounds), radius, radius, mPaint);
+        canvas.drawRoundRect(mRect, radius, radius, mPaint);
     }
 
     @Override
