@@ -9,6 +9,8 @@ package com.android.launcher3.qsb;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -100,6 +102,9 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
       updateIcons();
     } else if (LauncherPrefs.QSB_OUTER_OPACITY.getSharedPrefKey().equals(key)) {
       refreshOuterBackground();
+    } else if (LauncherPrefs.NOTHING_STYLE_ICONS.getSharedPrefKey().equals(key)) {
+      updateIcons();
+      refreshOuterBackground();
     }
   }
 
@@ -132,12 +137,40 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
     boolean lensAvailable = googleSearchAvailable && isLensAvailable();
     if (mLensIcon != null) mLensIcon.setVisibility(lensAvailable ? View.VISIBLE : View.GONE);
 
+    boolean nothingStyle = LauncherPrefs.NOTHING_STYLE_ICONS.get(getContext());
+    ColorStateList iconTint = nothingStyle
+        ? ColorStateList.valueOf(getNothingForegroundColor()) : null;
+    if (mGIcon != null) mGIcon.setImageTintList(iconTint);
+    if (mMicIcon != null) mMicIcon.setImageTintList(iconTint);
+    if (mLensIcon != null) mLensIcon.setImageTintList(iconTint);
+    if (mAiModeButton != null) {
+      mAiModeButton.setImageTintList(iconTint);
+      mAiModeButton.setBackgroundTintList(nothingStyle
+          ? ColorStateList.valueOf(getNothingSurfaceColor()) : null);
+    }
+
     if (googleSearchAvailable) {
       if (mMicIcon != null) mMicIcon.setImageResource(
           themedIconsEnabled ? R.drawable.ic_mic_themed : R.drawable.ic_mic_color);
       if (mLensIcon != null) mLensIcon.setImageResource(
           themedIconsEnabled ? R.drawable.ic_lens_themed : R.drawable.ic_lens_color);
     }
+  }
+
+  private int getNothingForegroundColor() {
+    boolean night = (getResources().getConfiguration().uiMode
+        & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    return getResources().getColor(night
+        ? android.R.color.system_neutral1_50 : android.R.color.system_neutral1_900,
+        getContext().getTheme());
+  }
+
+  private int getNothingSurfaceColor() {
+    boolean night = (getResources().getConfiguration().uiMode
+        & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    return getResources().getColor(night
+        ? android.R.color.system_neutral1_800 : android.R.color.system_neutral1_50,
+        getContext().getTheme());
   }
 
   private boolean isGoogleSearchAvailable() {

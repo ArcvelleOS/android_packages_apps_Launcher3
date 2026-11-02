@@ -6,6 +6,7 @@
 package com.android.launcher3.qsb;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
@@ -14,6 +15,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 
+import com.android.launcher3.LauncherPrefs;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.util.Themes;
@@ -40,7 +42,13 @@ public class QsbOuterDrawable extends Drawable {
         Rect bounds = getBounds();
         if (bounds.isEmpty()) return;
 
-        int themedColor = Themes.getAttrColor(mContext, R.attr.folderBackgroundColor);
+        boolean nothingStyle = LauncherPrefs.NOTHING_STYLE_ICONS.get(mContext);
+        boolean night = (mContext.getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        int themedColor = nothingStyle
+                ? mContext.getColor(night ? android.R.color.system_neutral1_900
+                        : android.R.color.system_neutral1_100)
+                : Themes.getAttrColor(mContext, R.attr.folderBackgroundColor);
         int alpha = mOpacity * 255 / 100;
         mPaint.setColor((themedColor & 0x00FFFFFF) | (alpha << 24));
 
@@ -56,7 +64,11 @@ public class QsbOuterDrawable extends Drawable {
                 bounds.top + padding,
                 bounds.right - rightPadding,
                 bounds.bottom - padding);
-        mPaint.setColor(mContext.getColor(R.color.materialColorSurfaceBright));
+        int innerColor = nothingStyle
+                ? mContext.getColor(night ? android.R.color.system_neutral1_800
+                        : android.R.color.system_neutral1_50)
+                : mContext.getColor(R.color.materialColorSurfaceBright);
+        mPaint.setColor(innerColor);
         canvas.drawRoundRect(new RectF(innerBounds), radius, radius, mPaint);
     }
 
