@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="smartspace_events_title">Smartspace events</string>
+    <string name="smartspace_events_title">At a Glance cards</string>
     <string name="smartspace_events_summary">Choose which cards appear. Cards are supplied by the system Smartspace provider; availability depends on the provider.</string>
     <string name="smartspace_weather">Weather</string>
     <string name="smartspace_calendar">Calendar</string>

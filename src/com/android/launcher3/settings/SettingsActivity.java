@@ -474,11 +474,18 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         }
 
         private void setupIconPackPreference(Preference preference) {
-            preference.setSummary(IconDatabase.getGlobalLabel(getContext()));
+            updateIconPackSummary(preference);
             preference.setOnPreferenceClickListener(p -> {
                 startActivity(new Intent(getContext(), IconPackSettingsActivity.class));
                 return true;
             });
+        }
+
+        private void updateIconPackSummary(Preference preference) {
+            int style = LauncherPrefs.NOTHING_STYLE_ICONS.get(requireContext())
+                    ? R.string.nothing_style_icons_title : R.string.icon_style_default;
+            preference.setSummary(getString(R.string.icon_style_and_pack_summary,
+                    getString(style), IconDatabase.getGlobalLabel(requireContext())));
         }
 
         @Override
@@ -488,7 +495,7 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
 
             Preference iconPackPref = findPreference(IconDatabase.KEY_ICON_PACK);
             if (iconPackPref != null) {
-                iconPackPref.setSummary(IconDatabase.getGlobalLabel(getContext()));
+                updateIconPackSummary(iconPackPref);
             }
 
             if (isAdded() && !mPreferenceHighlighted) {

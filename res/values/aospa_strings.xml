@@ -66,10 +66,12 @@
     <string name="recents_screenshot_title">Screenshot</string>
 
     <!-- Settings categories -->
+    <string name="category_home">Home screen</string>
+    <string name="category_search_feed">Search &amp; feed</string>
     <string name="category_allapps">App drawer</string>
     <string name="category_google">Google</string>
     <string name="category_icon">Icons</string>
-    <string name="category_recents">Recents</string>
+    <string name="category_recents">Recent apps</string>
     <string name="category_security">Security</string>
 
     <!-- Settings title to show Google Now at -1 screen on launcher. [CHAR LIMIT=50] -->
