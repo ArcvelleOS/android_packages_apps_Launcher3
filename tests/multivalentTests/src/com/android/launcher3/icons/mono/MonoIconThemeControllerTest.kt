@@ -17,6 +17,8 @@
 package com.android.launcher3.icons.mono
 
 import android.content.ComponentName
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.ColorDrawable
@@ -162,6 +164,24 @@ class MonoIconThemeControllerTest {
             nonMonoIcon,
             MonoIconThemeController().createThemedAdaptiveIcon(context, nonMonoIcon, iconInfo),
         )
+    }
+
+    @Test
+    fun `createThemedAdaptiveIcon keeps generated icon background color`() {
+        val colors = ColorList(Color.BLACK, Color.WHITE, Color.BLACK, Color.BLACK, Color.WHITE)
+        val mono = Bitmap.createBitmap(30, 30, Bitmap.Config.ALPHA_8)
+        val iconInfo = BitmapInfo.LOW_RES_INFO.copy(
+            themedBitmap = MonoThemedBitmap(mono, { colors }, foregroundScale = 0.5f)
+        )
+        val original = AdaptiveIconDrawable(ColorDrawable(Color.RED), null, null)
+        val themed = MonoIconThemeController(foregroundScale = 0.5f)
+            .createThemedAdaptiveIcon(context, original, iconInfo)
+        val background = themed.background
+        val rendered = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888)
+
+        background.setBounds(0, 0, 4, 4)
+        background.draw(Canvas(rendered))
+        assertEquals(Color.BLACK, rendered.getPixel(2, 2))
     }
 
     @Test
