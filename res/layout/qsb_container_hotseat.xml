@@ -41,6 +41,7 @@
             android:clickable="true"
             android:contentDescription="@string/qsb_voice_content_description"
             android:focusable="true"
+            android:padding="@dimen/qsb_lens_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_mic_color" />
 

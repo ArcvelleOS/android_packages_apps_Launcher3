@@ -117,19 +117,17 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
 
   private void updateIcons() {
     boolean googleSearchAvailable = isGoogleSearchAvailable();
-    boolean themedIconsEnabled = mThemeManager != null && mThemeManager.isIconThemeEnabled();
+    boolean nothingStyle = LauncherPrefs.NOTHING_STYLE_ICONS.get(getContext());
     if (mGIcon != null) mGIcon.setImageResource(
         googleSearchAvailable
-            ? themedIconsEnabled ? R.drawable.ic_super_g_themed : R.drawable.ic_super_g_color
+            ? nothingStyle ? R.drawable.ic_super_g_themed : R.drawable.ic_super_g_color
             : R.drawable.ic_allapps_search);
     if (mMicIcon != null) mMicIcon.setVisibility(googleSearchAvailable ? View.VISIBLE : View.GONE);
     if (mAiModeButton != null) {
       mAiModeButton.setVisibility(googleSearchAvailable ? View.VISIBLE : View.GONE);
       boolean musicSearch = Utilities.isAiMusicSearchEnabled(getContext());
       mAiModeButton.setImageResource(
-          themedIconsEnabled
-              ? (musicSearch ? R.drawable.ic_music_themed : R.drawable.ic_ai_mode_themed)
-              : (musicSearch ? R.drawable.ic_music_color : R.drawable.ic_ai_mode_color));
+          musicSearch ? R.drawable.ic_music_themed : R.drawable.ic_ai_mode_themed);
       mAiModeButton.setContentDescription(getContext().getString(
           musicSearch
               ? R.string.qsb_music_content_description
@@ -138,7 +136,6 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
     boolean lensAvailable = googleSearchAvailable && isLensAvailable();
     if (mLensIcon != null) mLensIcon.setVisibility(lensAvailable ? View.VISIBLE : View.GONE);
 
-    boolean nothingStyle = LauncherPrefs.NOTHING_STYLE_ICONS.get(getContext());
     ColorStateList iconTint = nothingStyle
         ? ColorStateList.valueOf(getNothingForegroundColor()) : null;
     if (mGIcon != null) mGIcon.setImageTintList(iconTint);
@@ -151,10 +148,8 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
     }
 
     if (googleSearchAvailable) {
-      if (mMicIcon != null) mMicIcon.setImageResource(
-          themedIconsEnabled ? R.drawable.ic_mic_themed : R.drawable.ic_mic_color);
-      if (mLensIcon != null) mLensIcon.setImageResource(
-          themedIconsEnabled ? R.drawable.ic_lens_themed : R.drawable.ic_lens_color);
+      if (mMicIcon != null) mMicIcon.setImageResource(R.drawable.ic_mic_themed);
+      if (mLensIcon != null) mLensIcon.setImageResource(R.drawable.ic_lens_themed);
     }
   }
 
