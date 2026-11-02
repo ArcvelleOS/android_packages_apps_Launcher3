@@ -281,12 +281,7 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                 });
             }
 
-            for (int i = screen.getPreferenceCount() - 1; i >= 0; i--) {
-                Preference preference = screen.getPreference(i);
-                if (!initPreference(preference)) {
-                    screen.removePreference(preference);
-                }
-            }
+            initPreferenceGroup(screen);
 
             // If the target preference is not in the current preference screen, find the parent
             // preference screen that contains the target preference and set it as the preference
@@ -312,7 +307,9 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
         private boolean isKeyInPreferenceGroup(String targetKey, PreferenceGroup parent) {
             for (int i = 0; i < parent.getPreferenceCount(); i++) {
                 Preference pref = parent.getPreference(i);
-                if (pref.getKey() != null && pref.getKey().equals(targetKey)) {
+                if (targetKey.equals(pref.getKey()) || (pref instanceof PreferenceGroup
+                        && !(pref instanceof PreferenceScreen)
+                        && isKeyInPreferenceGroup(targetKey, (PreferenceGroup) pref))) {
                     return true;
                 }
             }
@@ -328,19 +325,37 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
          */
         @Nullable
         private PreferenceScreen findParentPreference(PreferenceScreen parent, String targetKey) {
+            return findParentPreference(parent, parent, targetKey);
+        }
+
+        @Nullable
+        private PreferenceScreen findParentPreference(PreferenceGroup parent,
+                PreferenceScreen screen, String targetKey) {
             for (int i = 0; i < parent.getPreferenceCount(); i++) {
                 Preference pref = parent.getPreference(i);
-                if (pref instanceof PreferenceScreen) {
-                    PreferenceScreen foundKey = findParentPreference((PreferenceScreen) pref,
+                if (pref instanceof PreferenceGroup) {
+                    PreferenceScreen foundKey = findParentPreference((PreferenceGroup) pref,
+                            pref instanceof PreferenceScreen ? (PreferenceScreen) pref : screen,
                             targetKey);
                     if (foundKey != null) {
                         return foundKey;
                     }
                 } else if (pref.getKey() != null && pref.getKey().equals(targetKey)) {
-                    return parent;
+                    return screen;
                 }
             }
             return null;
+        }
+
+        private void initPreferenceGroup(PreferenceGroup group) {
+            for (int i = group.getPreferenceCount() - 1; i >= 0; i--) {
+                Preference preference = group.getPreference(i);
+                if (!initPreference(preference)) {
+                    group.removePreference(preference);
+                } else if (preference instanceof PreferenceGroup) {
+                    initPreferenceGroup((PreferenceGroup) preference);
+                }
+            }
         }
 
         @Override
