@@ -67,6 +67,45 @@
             android:persistent="true" />
 
         <SwitchPreferenceCompat
+            android:key="pref_show_hotseat_bg"
+            android:title="@string/hotseat_background_title"
+            android:summary="@string/hotseat_background_summary"
+            android:defaultValue="false"
+            android:persistent="true" />
+
+        <SwitchPreferenceCompat
+            android:key="pref_hotseat_blur"
+            android:title="@string/hotseat_blur_title"
+            android:summary="@string/hotseat_blur_summary"
+            android:defaultValue="true"
+            android:dependency="pref_show_hotseat_bg"
+            android:persistent="true" />
+
+        <co.aospa.framework.preference.CustomSeekBarPreference
+            android:key="pref_blur_depth"
+            android:title="@string/hotseat_blur_depth_title"
+            android:summary="@string/hotseat_blur_depth_summary"
+            android:dependency="pref_hotseat_blur"
+            android:persistent="true"
+            android:max="100"
+            android:defaultValue="30"
+            launcher:min="0"
+            launcher:interval="5"
+            launcher:units="" />
+
+        <co.aospa.framework.preference.CustomSeekBarPreference
+            android:key="pref_hotseat_opacity"
+            android:title="@string/hotseat_opacity_title"
+            android:summary="@string/hotseat_opacity_summary"
+            android:dependency="pref_show_hotseat_bg"
+            android:persistent="true"
+            android:max="100"
+            android:defaultValue="40"
+            launcher:min="0"
+            launcher:interval="5"
+            launcher:units="%" />
+
+        <SwitchPreferenceCompat
             android:key="pref_show_smartspace"
             android:title="@string/show_smartspace_title"
             android:summary="@string/show_smartspace_summary"

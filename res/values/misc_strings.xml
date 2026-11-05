@@ -19,6 +19,14 @@
     </string-array>
     <string name="cos_app_animations_title">ColorOS app animations</string>
     <string name="cos_app_animations_summary">Spring opening and closing with a scaling home screen</string>
+    <string name="hotseat_background_title">Hotseat background</string>
+    <string name="hotseat_background_summary">Show a tinted background behind the dock icons</string>
+    <string name="hotseat_blur_title">Hotseat blur</string>
+    <string name="hotseat_blur_summary">Blur the wallpaper behind the dock background</string>
+    <string name="hotseat_blur_depth_title">Hotseat blur depth</string>
+    <string name="hotseat_blur_depth_summary">Adjust the blur strength behind the dock</string>
+    <string name="hotseat_opacity_title">Hotseat background opacity</string>
+    <string name="hotseat_opacity_summary">Adjust the dock background tint opacity</string>
     <string name="show_smartspace_title">At a Glance</string>
     <string name="show_smartspace_summary">Show date, weather and event cards in an empty row on the first home page</string>
     <string name="smartspace_no_space">Make room for At a Glance by clearing one full row on the first home page.</string>
