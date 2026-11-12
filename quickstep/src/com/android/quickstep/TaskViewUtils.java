@@ -285,6 +285,30 @@ public final class TaskViewUtils {
                     AnimatedFloat.VALUE, tvsLocal.getFullScreenScale(),
                     TOUCH_RESPONSE);
 
+            taskView.getThumbnailBounds(TEMP_THUMBNAIL_BOUNDS, /*relativeToDragLayer=*/
+                    true);
+            // The bounds include the scroll scale of side cards, but the simulator
+            // reaches fullscreen from the unscaled rect (scrollScale -> 1 with
+            // fullScreenProgress), so undo it or the pivot lands the window off-center.
+            float startScrollScale = tvsLocal.scrollScale.value;
+            if (startScrollScale > 0f && startScrollScale != 1f) {
+                float inv = 1f / startScrollScale;
+                float cx = TEMP_THUMBNAIL_BOUNDS.exactCenterX();
+                float cy = TEMP_THUMBNAIL_BOUNDS.exactCenterY();
+                TEMP_THUMBNAIL_BOUNDS.set(
+                        Math.round(cx - (cx - TEMP_THUMBNAIL_BOUNDS.left) * inv),
+                        Math.round(cy - (cy - TEMP_THUMBNAIL_BOUNDS.top) * inv),
+                        Math.round(cx + (TEMP_THUMBNAIL_BOUNDS.right - cx) * inv),
+                        Math.round(cy + (TEMP_THUMBNAIL_BOUNDS.bottom - cy) * inv));
+            }
+            getTaskDimension(container.getDeviceProfile(),
+                    TEMP_TASK_DIMENSION);
+            TEMP_FULLSCREEN_BOUNDS.set(0, 0, (int) TEMP_TASK_DIMENSION.x,
+                    (int) TEMP_TASK_DIMENSION.y);
+            Utilities.getPivotsForScalingRectToRect(TEMP_THUMBNAIL_BOUNDS,
+                    TEMP_FULLSCREEN_BOUNDS, TEMP_PIVOT);
+            tvsLocal.setPivotOverride(new PointF(TEMP_PIVOT));
+
             out.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationStart(Animator animation) {
@@ -294,30 +318,6 @@ public final class TaskViewUtils {
                         showTransaction.getTransaction().show(targets.apps[i].leash);
                     }
                     applier.scheduleApply(showTransaction);
-
-                    taskView.getThumbnailBounds(TEMP_THUMBNAIL_BOUNDS, /*relativeToDragLayer=*/
-                            true);
-                    // The bounds include the scroll scale of side cards, but the simulator
-                    // reaches fullscreen from the unscaled rect (scrollScale -> 1 with
-                    // fullScreenProgress), so undo it or the pivot lands the window off-center.
-                    float startScrollScale = tvsLocal.scrollScale.value;
-                    if (startScrollScale > 0f && startScrollScale != 1f) {
-                        float inv = 1f / startScrollScale;
-                        float cx = TEMP_THUMBNAIL_BOUNDS.exactCenterX();
-                        float cy = TEMP_THUMBNAIL_BOUNDS.exactCenterY();
-                        TEMP_THUMBNAIL_BOUNDS.set(
-                                Math.round(cx - (cx - TEMP_THUMBNAIL_BOUNDS.left) * inv),
-                                Math.round(cy - (cy - TEMP_THUMBNAIL_BOUNDS.top) * inv),
-                                Math.round(cx + (TEMP_THUMBNAIL_BOUNDS.right - cx) * inv),
-                                Math.round(cy + (TEMP_THUMBNAIL_BOUNDS.bottom - cy) * inv));
-                    }
-                    getTaskDimension(container.getDeviceProfile(),
-                            TEMP_TASK_DIMENSION);
-                    TEMP_FULLSCREEN_BOUNDS.set(0, 0, (int) TEMP_TASK_DIMENSION.x,
-                            (int) TEMP_TASK_DIMENSION.y);
-                    Utilities.getPivotsForScalingRectToRect(TEMP_THUMBNAIL_BOUNDS,
-                            TEMP_FULLSCREEN_BOUNDS, TEMP_PIVOT);
-                    tvsLocal.setPivotOverride(TEMP_PIVOT);
                 }
             });
             out.addOnFrameCallback(() -> {
