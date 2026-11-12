@@ -373,7 +373,7 @@ public class OtherActivityInputConsumer extends ContextWrapper implements InputC
                         }
                         if (!mPassedWindowMoveSlop) {
                             mPassedWindowMoveSlop = true;
-                            mStartDisplacement = -mTouchSlop;
+                            mStartDisplacement = needDeferDown() ? displacement : -mTouchSlop;
                         }
                         notifyGestureStarted(isLikelyToStartNewTask);
                     }

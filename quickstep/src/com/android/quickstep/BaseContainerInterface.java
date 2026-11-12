@@ -129,7 +129,7 @@ public abstract class BaseContainerInterface<STATE_TYPE extends BaseState<STATE_
                 isEventOverBubbleBarView(taskbarUiState, ev);
         boolean isEventOverAnyTaskbarItem =
                 isEventOverAnyTaskbarView(taskbarUiState, ev);
-        return deviceState.isInDeferredGestureRegion(ev)
+        return (!deviceState.isFullyGesturalNavMode() && deviceState.isInDeferredGestureRegion(ev))
                 || deviceState.isImeRenderingNavButtons()
                 || isTrackpadMultiFingerSwipe(ev)
                 || isEventOverBubbleBarStashHandle
