@@ -21,7 +21,7 @@ import android.view.View;
 import android.widget.EdgeEffect;
 
 import androidx.annotation.NonNull;
-import androidx.dynamicanimation.animation.DynamicAnimation;
+import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.RecyclerView;
@@ -60,6 +60,7 @@ public class SpringEdgeEffectFactory extends RecyclerView.EdgeEffectFactory {
                 };
         private boolean mListeningForDetach;
         private float mPullDistance = 0f;
+        private float mTranslation;
 
         SpringEdgeEffect(RecyclerView recyclerView, int direction) {
             super(recyclerView.getContext());
@@ -77,16 +78,13 @@ public class SpringEdgeEffectFactory extends RecyclerView.EdgeEffectFactory {
             mVelocityScale = Math.max(10, Math.min(200,
                     LauncherPrefs.OVERSCROLL_VELOCITY_SCALE.get(context))) / 100f;
 
-            DynamicAnimation.ViewProperty property =
-                    mIsVertical ? DynamicAnimation.TRANSLATION_Y : DynamicAnimation.TRANSLATION_X;
-
-            mSpringAnimation = new SpringAnimation(recyclerView, property, 0f);
+            mSpringAnimation = new SpringAnimation(new FloatValueHolder());
             mSpringAnimation.setSpring(new SpringForce(0f)
                     .setStiffness(stiffness)
                     .setDampingRatio(dampingRatio));
+            mSpringAnimation.addUpdateListener((animation, value, velocity) -> setTranslation(value));
             mSpringAnimation.addEndListener((animation, canceled, value, velocity) -> {
                 if (!canceled) {
-                    mPullDistance = 0f;
                     setTranslation(0f);
                     stopListeningForDetach();
                 }
@@ -105,50 +103,45 @@ public class SpringEdgeEffectFactory extends RecyclerView.EdgeEffectFactory {
 
         @Override
         public float onPullDistance(float deltaDistance, float displacement) {
-            // A new pull can interrupt the return spring. Rebase the pull distance from
-            // the current view translation before cancelling so the next pull continues
-            // from the visible stretch instead of jumping from a stale distance.
-            if (mSpringAnimation.isRunning()) {
-                updatePullDistanceFromTranslation();
-                mSpringAnimation.cancel();
+            int size = mIsVertical ? mRecyclerView.getHeight() : mRecyclerView.getWidth();
+            if (size <= 0) {
+                finish();
+                return 0f;
             }
-            // Snapshot after rebasing: spring motion is not distance consumed from this event.
+            if (mSpringAnimation.isRunning()) {
+                // Let an inward swipe scroll freely while the visual spring settles.
+                if (deltaDistance <= 0f) {
+                    return 0f;
+                }
+                mSpringAnimation.cancel();
+                mPullDistance = Math.max(0f,
+                        Math.min(mMaxStretchFraction, mSign * mTranslation / size));
+            }
+            // Only report the distance consumed by this pull, excluding spring motion.
             float previous = mPullDistance;
             mPullDistance = Math.max(0f,
                     Math.min(mMaxStretchFraction, mPullDistance + deltaDistance));
-            float size = mIsVertical ? mRecyclerView.getHeight() : mRecyclerView.getWidth();
             setTranslation(mSign * mPullDistance * size);
             if (mPullDistance > 0f) listenForDetach();
             else stopListeningForDetach();
             return mPullDistance - previous;
         }
 
-        private void updatePullDistanceFromTranslation() {
-            float size = mIsVertical ? mRecyclerView.getHeight() : mRecyclerView.getWidth();
-            if (size <= 0f) {
-                mPullDistance = 0f;
-                return;
-            }
-
-            float translation = mIsVertical
-                    ? mRecyclerView.getTranslationY() : mRecyclerView.getTranslationX();
-            mPullDistance = Math.max(0f,
-                    Math.min(mMaxStretchFraction, mSign * translation / size));
-        }
-
         @Override
         public float getDistance() {
-            if (mSpringAnimation.isRunning()) updatePullDistanceFromTranslation();
+            // RecyclerView claims the next touch if it sees stretch left to consume.
             return mPullDistance;
         }
 
-        private float getTranslation() {
-            return mIsVertical ? mRecyclerView.getTranslationY() : mRecyclerView.getTranslationX();
-        }
-
         private void setTranslation(float translation) {
-            if (mIsVertical) mRecyclerView.setTranslationY(translation);
-            else mRecyclerView.setTranslationX(translation);
+            // Each edge changes only its own contribution to the view's translation.
+            float change = translation - mTranslation;
+            mTranslation = translation;
+            if (mIsVertical) {
+                mRecyclerView.setTranslationY(mRecyclerView.getTranslationY() + change);
+            } else {
+                mRecyclerView.setTranslationX(mRecyclerView.getTranslationX() + change);
+            }
         }
 
         @Override
@@ -175,12 +168,9 @@ public class SpringEdgeEffectFactory extends RecyclerView.EdgeEffectFactory {
 
         @Override
         public void onRelease() {
-            // RecyclerView releases all edges repeatedly during scrolling. Do not restart a
-            // running spring or create a zero-distance spring for an unused edge.
-            if (mSpringAnimation.isRunning() || getTranslation() == 0f) return;
-            if (mPullDistance > 0f) {
-                mRecyclerView.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
-            }
+            // RecyclerView releases every edge, including edges this gesture never pulled.
+            if (mPullDistance == 0f) return;
+            mRecyclerView.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
             startSpring(0f);
         }
 
@@ -192,14 +182,16 @@ public class SpringEdgeEffectFactory extends RecyclerView.EdgeEffectFactory {
         }
 
         private void startSpring(float velocity) {
-            float size = mIsVertical ? mRecyclerView.getHeight() : mRecyclerView.getWidth();
-            if (size <= 0f) {
+            mPullDistance = 0f;
+            int size = mIsVertical ? mRecyclerView.getHeight() : mRecyclerView.getWidth();
+            if (size <= 0) {
                 finish();
                 return;
             }
             float maxStretch = size * mMaxStretchFraction;
-            setTranslation(Math.max(-maxStretch, Math.min(maxStretch, getTranslation())));
+            setTranslation(Math.max(-maxStretch, Math.min(maxStretch, mTranslation)));
             mSpringAnimation.setMinValue(-maxStretch).setMaxValue(maxStretch);
+            mSpringAnimation.setStartValue(mTranslation);
             mSpringAnimation.setStartVelocity(velocity);
             listenForDetach();
             mSpringAnimation.animateToFinalPosition(0f);

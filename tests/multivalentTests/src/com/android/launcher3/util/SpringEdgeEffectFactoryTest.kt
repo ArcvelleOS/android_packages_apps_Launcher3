@@ -31,7 +31,7 @@ class SpringEdgeEffectFactoryTest {
     @get:Rule val context = SandboxApplication()
 
     @Test
-    fun interrupted_return_consumes_only_the_new_finger_movement() {
+    fun rebound_leaves_the_next_inward_swipe_available_to_scroll() {
         val view = RecyclerView(context).apply { layout(0, 0, 1000, 1000) }
         val edge = SpringEdgeEffectFactory.createSpringEdgeEffect(
             view, RecyclerView.EdgeEffectFactory.DIRECTION_BOTTOM
@@ -39,16 +39,60 @@ class SpringEdgeEffectFactoryTest {
         try {
             edge.onPullDistance(0.04f, 0.5f)
             edge.onRelease()
-            // Simulate the spring moving part-way back before the next touch event.
-            view.translationY = -30f
-            assertEquals(0.03f, edge.distance, 0.00001f)
-            assertEquals(-0.01f, edge.onPullDistance(-0.01f, 0.5f), 0.00001f)
-            assertEquals(-20f, view.translationY, 0.001f)
-            // Excess reverse motion is returned to RecyclerView to scroll the list.
-            assertEquals(-0.02f, edge.onPullDistance(-0.10f, 0.5f), 0.00001f)
+
+            assertEquals(-40f, view.translationY, 0.001f)
+            assertEquals(0f, edge.distance, 0f)
+            assertEquals(0f, edge.onPullDistance(-0.01f, 0.5f), 0f)
+            assertEquals(-40f, view.translationY, 0.001f)
+
+            assertEquals(0.01f, edge.onPullDistance(0.01f, 0.5f), 0.00001f)
+            assertEquals(-50f, view.translationY, 0.001f)
+            assertEquals(-0.05f, edge.onPullDistance(-0.10f, 0.5f), 0.00001f)
             assertEquals(0f, edge.distance, 0f)
         } finally {
             edge.finish()
+        }
+    }
+
+    @Test
+    fun rebound_at_top_does_not_claim_the_next_drawer_dismissal() {
+        val view = RecyclerView(context).apply { layout(0, 0, 1000, 1000) }
+        val edge = SpringEdgeEffectFactory.createSpringEdgeEffect(
+            view, RecyclerView.EdgeEffectFactory.DIRECTION_TOP
+        )
+        try {
+            edge.onPullDistance(0.04f, 0.5f)
+            edge.onRelease()
+
+            assertEquals(40f, view.translationY, 0.001f)
+            assertEquals(0f, edge.distance, 0f)
+        } finally {
+            edge.finish()
+        }
+    }
+
+    @Test
+    fun releasing_or_finishing_an_edge_does_not_move_the_opposite_edge() {
+        val view = RecyclerView(context).apply { layout(0, 0, 1000, 1000) }
+        val top = SpringEdgeEffectFactory.createSpringEdgeEffect(
+            view, RecyclerView.EdgeEffectFactory.DIRECTION_TOP
+        )
+        val bottom = SpringEdgeEffectFactory.createSpringEdgeEffect(
+            view, RecyclerView.EdgeEffectFactory.DIRECTION_BOTTOM
+        )
+        try {
+            bottom.onPullDistance(0.04f, 0.5f)
+            top.onRelease()
+            assertTrue(top.isFinished)
+
+            top.onPullDistance(0.02f, 0.5f)
+            assertEquals(-20f, view.translationY, 0.001f)
+            top.finish()
+            assertEquals(-40f, view.translationY, 0.001f)
+            assertEquals(0.04f, bottom.distance, 0.00001f)
+        } finally {
+            top.finish()
+            bottom.finish()
         }
     }
 

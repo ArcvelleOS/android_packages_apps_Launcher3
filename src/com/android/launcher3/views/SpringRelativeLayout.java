@@ -112,6 +112,7 @@ public class SpringRelativeLayout extends RelativeLayout {
     private class EdgeEffectProxy extends EdgeEffect {
 
         private final EdgeEffect mParent;
+        private boolean mPulling;
 
         EdgeEffectProxy(Context context, EdgeEffect parent) {
             super(context);
@@ -131,42 +132,48 @@ public class SpringRelativeLayout extends RelativeLayout {
 
         @Override
         public void onAbsorb(int velocity) {
+            mPulling = false;
             mParent.onAbsorb(velocity);
             invalidateParentScrollEffect();
         }
 
         @Override
         public void onPull(float deltaDistance) {
-            mParent.onPull(deltaDistance);
-            invalidateParentScrollEffect();
+            onPull(deltaDistance, 0.5f);
         }
 
         @Override
         public void onPull(float deltaDistance, float displacement) {
-            mParent.onPull(deltaDistance, displacement);
-            invalidateParentScrollEffect();
+            onPullDistance(deltaDistance, displacement);
         }
 
         @Override
         public float onPullDistance(float deltaDistance, float displacement) {
+            if (!mPulling && deltaDistance <= 0f) {
+                return 0f;
+            }
             float consumed = mParent.onPullDistance(deltaDistance, displacement);
+            mPulling = mParent.getDistance() > 0f;
             invalidateParentScrollEffect();
             return consumed;
         }
 
         @Override
         public float getDistance() {
-            return mParent.getDistance();
+            // The parent still draws the rebound, but it must not claim a new drawer swipe.
+            return mPulling ? mParent.getDistance() : 0f;
         }
 
         @Override
         public void onRelease() {
+            mPulling = false;
             mParent.onRelease();
             invalidateParentScrollEffect();
         }
 
         @Override
         public void finish() {
+            mPulling = false;
             mParent.finish();
         }
 
