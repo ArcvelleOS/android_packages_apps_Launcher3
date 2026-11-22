@@ -16,6 +16,7 @@
 
 package com.android.launcher3.qsb;
 
+import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -83,14 +84,12 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
         mLensIcon = findViewById(R.id.lens_icon);
         mAiModeButton = findViewById(R.id.ai_mode_button);
 
-        setOnClickListener(v -> Launcher.getLauncher(getContext()).startSearch(
-                "", false, null, true));
+        setOnClickListener(v -> launchSearch());
 
         if (mLensIcon != null) {
-            boolean hasLens = isLensAvailable(getContext());
-            mLensIcon.setVisibility(hasLens ? VISIBLE : GONE);
-            if (hasLens) {
-                Intent lensIntent = getLensIntent(getContext());
+            Intent lensIntent = getLensIntent(getContext());
+            mLensIcon.setVisibility(lensIntent != null ? VISIBLE : GONE);
+            if (lensIntent != null) {
                 mLensIcon.setOnClickListener(v -> launchSafely(lensIntent));
             }
         }
@@ -106,6 +105,7 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
         }
         LauncherPrefs.getPrefs(getContext()).registerOnSharedPreferenceChangeListener(this);
         updateIcons();
+        refreshOuterBackground();
     }
 
     @Override
@@ -163,6 +163,17 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
         }
     }
 
+    private void launchSearch() {
+        SearchManager manager = getContext().getSystemService(SearchManager.class);
+        if (manager != null && manager.getGlobalSearchActivity() != null) {
+            Launcher.getLauncher(getContext()).startSearch("", false, null, true);
+        } else {
+            launchSafely(new Intent(Intent.ACTION_WEB_SEARCH)
+                    .setPackage(Utilities.GSA_PACKAGE)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        }
+    }
+
     private void launchSafely(Intent intent) {
         try {
             getContext().startActivity(intent);
@@ -190,7 +201,8 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
         Launcher.getLauncher(getContext()).startSearch("", false, null, true);
     }
 
-    static Intent getLensIntent(Context context) {
+    @Nullable
+    private static Intent getLensIntent(Context context) {
         // Primary: launch Lens activity directly by component. Lens only accepts direct launches
         // that present themselves as its home screen shortcut, and crashes otherwise.
         Intent intent = new Intent(Intent.ACTION_MAIN)
@@ -209,12 +221,7 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
         if (uriIntent.resolveActivity(context.getPackageManager()) != null) {
             return uriIntent;
         }
-        // Last fallback: launch Google app
-        return context.getPackageManager().getLaunchIntentForPackage(Utilities.GSA_PACKAGE);
-    }
-
-    static boolean isLensAvailable(Context context) {
-        return Utilities.isPackageEnabled(Utilities.GSA_PACKAGE, context);
+        return null;
     }
 
     @Nullable

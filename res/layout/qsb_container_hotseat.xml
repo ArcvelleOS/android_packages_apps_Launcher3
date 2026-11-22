@@ -51,7 +51,7 @@
             android:background="@drawable/pill_ripple"
             android:clickable="true"
             android:contentDescription="@string/label_voice_search"
-            android:focusable="false"
+            android:focusable="true"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_mic_color" />
 
@@ -62,7 +62,7 @@
             android:background="@drawable/pill_ripple"
             android:clickable="true"
             android:contentDescription="@string/label_lens"
-            android:focusable="false"
+            android:focusable="true"
             android:padding="@dimen/qsb_lens_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_lens_color"
@@ -77,7 +77,7 @@
             android:background="@drawable/bg_ai_mode_button"
             android:clickable="true"
             android:contentDescription="@string/label_ai_mode"
-            android:focusable="false"
+            android:focusable="true"
             android:src="@drawable/ic_ai_mode_color" />
     </LinearLayout>
 
