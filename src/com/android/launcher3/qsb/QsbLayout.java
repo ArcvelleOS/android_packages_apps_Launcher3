@@ -126,6 +126,17 @@ public class QsbLayout extends FrameLayout implements Reorderable, HorizontalIns
         }
     }
 
+    /** Draws the search box as frosted glass at the given opacity, without the outer ring. */
+    public void setFrosted(boolean frosted, int opacity) {
+        if (getBackground() instanceof QsbOuterDrawable outer) {
+            outer.setFrosted(frosted, opacity);
+        }
+        if (mAiModeButton != null && mAiModeButton.getBackground() != null) {
+            mAiModeButton.getBackground().mutate()
+                    .setAlpha(frosted ? QsbOuterDrawable.getFrostedAlpha(opacity) : 255);
+        }
+    }
+
     private void refreshOuterBackground() {
         if (getBackground() instanceof QsbOuterDrawable outer) {
             outer.updateOpacity();
