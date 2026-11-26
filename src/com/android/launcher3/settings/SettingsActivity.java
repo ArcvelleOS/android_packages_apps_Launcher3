@@ -92,6 +92,8 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
     private static final String NOTIFICATION_DOTS_PREFERENCE_KEY = "pref_icon_badging";
 
     private static final String SHOW_HOTSEAT_QSB_KEY = "pref_show_hotseat_qsb";
+    private static final String SHOW_HOTSEAT_BG_KEY = "pref_show_hotseat_bg";
+    private static final String QSB_OUTER_OPACITY_KEY = "pref_qsb_outer_opacity";
 
     public static final String EXTRA_FRAGMENT_ARGS = ":settings:fragment_args";
 
@@ -386,6 +388,26 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
 
             // Overriding Text Direction in the Androidx preference library to support RTL
             view.setTextDirection(View.TEXT_DIRECTION_LOCALE);
+            postQsbOuterOpacityUpdate();
+        }
+
+        /** Runs after the dependency pass so it has the last word on the enabled state. */
+        private void postQsbOuterOpacityUpdate() {
+            View view = getView();
+            if (view != null) {
+                view.post(this::updateQsbOuterOpacityEnabled);
+            }
+        }
+
+        /** The search bar outer shape is not drawn while the hotseat background is on. */
+        private void updateQsbOuterOpacityEnabled() {
+            Preference opacity = findPreference(QSB_OUTER_OPACITY_KEY);
+            if (opacity == null || !isAdded()) {
+                return;
+            }
+            android.content.Context context = requireContext();
+            opacity.setEnabled(LauncherPrefs.SHOW_HOTSEAT_QSB.get(context)
+                    && !LauncherPrefs.SHOW_HOTSEAT_BG.get(context));
         }
 
         @Override
@@ -433,6 +455,11 @@ public class SettingsActivity extends CollapsingToolbarBaseActivity
                     return launcherApps != null &&
                             launcherApps.isPackageEnabled(Utilities.GSA_PACKAGE, myUserHandle());
                 case SHOW_HOTSEAT_QSB_KEY:
+                case SHOW_HOTSEAT_BG_KEY:
+                    preference.setOnPreferenceChangeListener((pref, value) -> {
+                        postQsbOuterOpacityUpdate();
+                        return true;
+                    });
                     return true;
                 case IconDatabase.KEY_ICON_PACK:
                     setupIconPackPreference(preference);
