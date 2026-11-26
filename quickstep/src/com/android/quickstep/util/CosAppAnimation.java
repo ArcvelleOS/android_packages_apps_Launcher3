@@ -14,6 +14,8 @@ import com.android.launcher3.LauncherPrefs;
 
 /** Optional ColorOS-inspired motion, using an analytic unit-mass spring without ROM helpers. */
 public final class CosAppAnimation {
+    private static final int SPRING_SAMPLE_COUNT = 256;
+
     public static final int LAUNCH_DURATION = 320;
     public static final long REVEAL_DURATION = 500;
     public static final float HOME_SCALE = 0.9f;
@@ -32,8 +34,21 @@ public final class CosAppAnimation {
         final double frequency = Math.sqrt(stiffness);
         final double seconds = duration / 1000.0;
         final double end = position(frequency, damping, seconds);
-        return progress -> (float) (position(frequency, damping,
-                Math.max(0f, Math.min(1f, progress)) * seconds) / end);
+        final float[] samples = new float[SPRING_SAMPLE_COUNT];
+        for (int i = 0; i < SPRING_SAMPLE_COUNT; i++) {
+            double progress = (double) i / (SPRING_SAMPLE_COUNT - 1);
+            samples[i] = (float) (position(frequency, damping, progress * seconds) / end);
+        }
+        return progress -> {
+            float boundedProgress = Math.max(0f, Math.min(1f, progress));
+            float position = boundedProgress * (SPRING_SAMPLE_COUNT - 1);
+            int lower = (int) position;
+            if (lower >= SPRING_SAMPLE_COUNT - 1) {
+                return samples[SPRING_SAMPLE_COUNT - 1];
+            }
+            float fraction = position - lower;
+            return samples[lower] + fraction * (samples[lower + 1] - samples[lower]);
+        };
     }
 
     private static double position(double frequency, double damping, double time) {
