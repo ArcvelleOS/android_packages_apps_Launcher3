@@ -371,8 +371,7 @@ public class QuickstepTransitionManager implements OnDeviceProfileChangeListener
                 launcher, R.interpolator.emphasized_interpolator);
         mLatencyTracker = LatencyTracker.getInstance(launcher);
 
-        mMaxBlurRadius = res.getDimensionPixelSize(
-                R.dimen.max_depth_blur_radius_enhanced);
+        mMaxBlurRadius = res.getDimensionPixelSize(R.dimen.max_app_launch_blur_radius);
         mIsAppLaunchBlurEnabled = appLaunchBlur() && res.getBoolean(
                 com.android.internal.R.bool.config_enableAppLaunchBlur);
     }
