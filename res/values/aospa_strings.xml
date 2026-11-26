@@ -102,5 +102,5 @@
     <string name="dock_ai_music_search_title">Music search</string>
     <string name="dock_ai_music_search_summary">Start music search when pressing the AI mode button</string>
     <string name="qsb_outer_opacity_title">Search bar outer opacity</string>
-    <string name="qsb_outer_opacity_summary">Adjust the opacity of the search bar outer shape</string>
+    <string name="qsb_outer_opacity_summary">Adjust the opacity of the search bar outer shape. Not used while the hotseat background is on</string>
 </resources>

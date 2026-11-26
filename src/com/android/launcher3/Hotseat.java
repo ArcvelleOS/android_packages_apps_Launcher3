@@ -51,6 +51,7 @@ import com.android.launcher3.dragndrop.SystemDragItemInfo;
 import com.android.launcher3.homescreenfiles.HomeScreenFilesUtilsKt;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.model.data.LauncherAppWidgetInfo;
+import com.android.launcher3.qsb.QsbLayout;
 import com.android.launcher3.statemanager.StateManager.StateListener;
 import com.android.launcher3.util.HorizontalInsettableView;
 import com.android.launcher3.util.LauncherBindableItemsContainer.ItemOperator;
@@ -97,6 +98,7 @@ public class Hotseat extends CellLayout implements Insettable {
     private static final int BUBBLE_BAR_ADJUSTMENT_ANIMATION_DURATION_MS = 250;
     private static final float BACKGROUND_ICON_PADDING_DP = 10f;
     private static final float BACKGROUND_END_PADDING_DP = 14f;
+    private static final float BACKGROUND_QSB_GAP_DP = 8f;
 
     @ViewDebug.ExportedProperty(category = "launcher")
     private boolean mHasVerticalHotseat;
@@ -114,6 +116,7 @@ public class Hotseat extends CellLayout implements Insettable {
     private BackgroundBlurDrawable mBackgroundBlurDrawable;
     private final GradientDrawable mBackgroundTintDrawable = new GradientDrawable();
     private final Rect mPillRect = new Rect();
+    private final Rect mIconRowRect = new Rect();
     private final Rect mLastBlurBounds = new Rect();
     private float mLastCornerRadius = -1f;
     private int mLastBlurRadius = -1;
@@ -485,8 +488,18 @@ public class Hotseat extends CellLayout implements Insettable {
         if (wasShowingBackground != mShowHotseatBg && mHasInsets) {
             setInsets(mInsets);
         }
+        if (isAttachedToWindow()) {
+            updateQsbFrost();
+        }
         updateBlurState();
         invalidate();
+    }
+
+    /** Draws the search box as frosted glass when it shares the dock background. */
+    private void updateQsbFrost() {
+        if (mQsb instanceof QsbLayout qsbLayout) {
+            qsbLayout.setFrosted(isUnifiedDock(), mOpacity);
+        }
     }
 
     @Override
@@ -535,6 +548,11 @@ public class Hotseat extends CellLayout implements Insettable {
         }
 
         float cornerRadius = Math.min(mPillRect.width(), mPillRect.height()) / 2f;
+        if (isUnifiedDock()) {
+            // Keep the corners concentric with the search box.
+            cornerRadius = Math.min(cornerRadius, mQsb.getHeight() / 2f - getQsbRingPx()
+                    + Utilities.dpToPx(BACKGROUND_END_PADDING_DP));
+        }
         boolean drewBlur = false;
         if (canvas.isHardwareAccelerated() && canBlurHotseat()) {
             if (mBackgroundBlurDrawable == null && getViewRootImpl() != null) {
@@ -609,10 +627,48 @@ public class Hotseat extends CellLayout implements Insettable {
         mPillRect.offset(Math.round(icons.getTranslationX()), Math.round(icons.getTranslationY()));
         int paddingX = Utilities.dpToPx(mHasVerticalHotseat
                 ? BACKGROUND_ICON_PADDING_DP : BACKGROUND_END_PADDING_DP);
+        if (!mHasVerticalHotseat) {
+            // Pad from the visible icon edge, not the cell edge, so the pill stays on screen.
+            int iconSize = mActivity.getDeviceProfile().getWorkspaceProfile().getIconSizePx();
+            paddingX -= Math.max(0, (mCellWidth - Utilities.getIconVisibleSizePx(iconSize)) / 2);
+        }
         int paddingY = Utilities.dpToPx(mHasVerticalHotseat
                 ? BACKGROUND_END_PADDING_DP : BACKGROUND_ICON_PADDING_DP);
         mPillRect.inset(-paddingX, -paddingY);
+        if (hasStackedQsb() && mQsb.getWidth() > 0) {
+            if (isUnifiedDock()) {
+                // One card around the icons and the QSB search box.
+                int ring = getQsbRingPx();
+                int pad = Utilities.dpToPx(BACKGROUND_END_PADDING_DP);
+                mPillRect.left = mQsb.getLeft() + ring - pad;
+                mPillRect.right = mQsb.getRight() - ring + pad;
+                mPillRect.bottom = mQsb.getBottom() - ring + pad;
+            } else {
+                // Match the QSB width and keep a gap above it instead of touching it.
+                mPillRect.left = mQsb.getLeft();
+                mPillRect.right = mQsb.getRight();
+                int maxBottom = mQsb.getTop() - Utilities.dpToPx(BACKGROUND_QSB_GAP_DP);
+                if (maxBottom > mPillRect.top) {
+                    mPillRect.bottom = Math.min(mPillRect.bottom, maxBottom);
+                }
+            }
+        }
         return mPillRect.intersect(0, 0, getWidth(), getHeight());
+    }
+
+    /** Returns true if the dock background also wraps the QSB search box. */
+    private boolean isUnifiedDock() {
+        return mShowHotseatBg && mQsb instanceof QsbLayout && hasStackedQsb();
+    }
+
+    private int getQsbRingPx() {
+        return getResources().getDimensionPixelSize(R.dimen.qsb_icon_padding);
+    }
+
+    /** Returns true if the QSB sits in its own row below the dock icons. */
+    private boolean hasStackedQsb() {
+        return mQsb != null && mQsb.getVisibility() != GONE && !mHasVerticalHotseat
+                && !mActivity.getDeviceProfile().getHotseatProfile().isQsbInline();
     }
 
     @Override
@@ -650,8 +706,17 @@ public class Hotseat extends CellLayout implements Insettable {
 
         if (mQsb != null && mQsb.getVisibility() != View.GONE) {
             DeviceProfile dp = mActivity.getDeviceProfile();
+            boolean unified = isUnifiedDock();
+            updateQsbFrost();
+            int qsbWidth = dp.getHotseatQsbWidth();
+            if (mShowHotseatBg && hasStackedQsb()) {
+                // Extend past the icons so the QSB lines up with the dock background.
+                int extra = unified ? getQsbRingPx() : Utilities.dpToPx(BACKGROUND_END_PADDING_DP);
+                int margin = getResources().getDimensionPixelSize(R.dimen.min_qsb_margin);
+                qsbWidth = Math.min(qsbWidth + 2 * extra, getMeasuredWidth() - 2 * margin);
+            }
             mQsb.measure(
-                    makeMeasureSpec(dp.getHotseatQsbWidth(), MeasureSpec.EXACTLY),
+                    makeMeasureSpec(qsbWidth, MeasureSpec.EXACTLY),
                     makeMeasureSpec(dp.getHotseatProfile().getQsbHeight(), MeasureSpec.EXACTLY)
             );
         }
@@ -697,7 +762,19 @@ public class Hotseat extends CellLayout implements Insettable {
             subtraction = dp.getHotseatProfile().getQsbShadowHeight();
         }
         int bottom = height - (bottomOffset - subtraction);
+        if (isUnifiedDock()) {
+            bottom -= getUnifiedQsbLift(bottom - qsbHeight);
+        }
         mQsb.layout(left, bottom - qsbHeight, right, bottom);
+    }
+
+    /** Returns how far to raise the QSB so its gap to the icons matches the card padding. */
+    private int getUnifiedQsbLift(int qsbTop) {
+        int iconSize = mActivity.getDeviceProfile().getWorkspaceProfile().getIconSizePx();
+        cellToRect(0, 0, 1, 1, mIconRowRect);
+        int iconBottom = mIconRowRect.centerY() + Utilities.getIconVisibleSizePx(iconSize) / 2;
+        int gap = qsbTop + getQsbRingPx() - iconBottom;
+        return Math.max(0, gap - Utilities.dpToPx(BACKGROUND_END_PADDING_DP));
     }
 
     /**
