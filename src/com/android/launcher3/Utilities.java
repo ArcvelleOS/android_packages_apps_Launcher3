@@ -919,6 +919,11 @@ public final class Utilities {
      * Returns a partial, loggable stack trace.
      */
     public static String getTrimmedStackTrace(String callingMethodName) {
+        // State changes happen during normal launcher gestures. Building a stack trace here is
+        // useful while debugging, but needlessly expensive on user builds.
+        if (!BuildConfig.IS_DEBUG_DEVICE) {
+            return "";
+        }
         String stackTrace = Log.getStackTraceString(new Exception());
         return Arrays.stream(stackTrace.split("\\n"))
                 .skip(2) // Removes the line "java.lang.Exception" and "getTrimmedStackTrace".
